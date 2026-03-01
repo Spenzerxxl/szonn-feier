@@ -1563,6 +1563,13 @@
   // ── Konfiguration ──────────────────────────────────────────
   const ACTIVATION_KEY = 'P'; // Ctrl+Shift+P
   const OVERLAY_Z = 99999;
+  const MIN_SCALE_FACTOR = 0.15;  // Rauszoomen bis 15% der Cover-Skalierung
+  const MAX_SCALE_FACTOR = 5;     // Reinzoomen bis 500% der Cover-Skalierung
+  // Eleganter Hintergrund für Leerraum (festlich, passend zum Seitendesign)
+  const ELEGANT_BG_COLOR = '#2c3e50';
+  const ELEGANT_BG_CSS = `background-color: ${ELEGANT_BG_COLOR}; background-image: ` +
+    `repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(255,255,255,0.02) 8px, rgba(255,255,255,0.02) 16px), ` +
+    `repeating-linear-gradient(-45deg, transparent, transparent 8px, rgba(255,255,255,0.015) 8px, rgba(255,255,255,0.015) 16px);`;
 
   // ── State ──────────────────────────────────────────────────
   let overlayEl = null;
@@ -1653,18 +1660,41 @@
     return parseFloat(val) || 50;
   }
 
+  // ── Prüft ob Bild den Viewport vollständig füllt ────────────
+  function isCoverMode() {
+    const scaledW = naturalW * imgScale;
+    const scaledH = naturalH * imgScale;
+    return scaledW >= vpW - 0.5 && scaledH >= vpH - 0.5;
+  }
+
   // ── Position → object-position %-Werte ─────────────────────
   function calcObjectPosition() {
     const scaledW = naturalW * imgScale;
     const scaledH = naturalH * imgScale;
-    const maxOffsetX = scaledW - vpW;
-    const maxOffsetY = scaledH - vpH;
-    const px = maxOffsetX > 0 ? Math.round((-imgX / maxOffsetX) * 100) : 50;
-    const py = maxOffsetY > 0 ? Math.round((-imgY / maxOffsetY) * 100) : 50;
-    return {
-      x: Math.max(0, Math.min(100, px)),
-      y: Math.max(0, Math.min(100, py))
-    };
+
+    if (isCoverMode()) {
+      // Cover: Bild >= Viewport → Position = wie weit das Bild verschoben ist
+      const maxOffsetX = scaledW - vpW;
+      const maxOffsetY = scaledH - vpH;
+      const px = maxOffsetX > 0 ? Math.round((-imgX / maxOffsetX) * 100) : 50;
+      const py = maxOffsetY > 0 ? Math.round((-imgY / maxOffsetY) * 100) : 50;
+      return {
+        x: Math.max(0, Math.min(100, px)),
+        y: Math.max(0, Math.min(100, py)),
+        fit: 'cover'
+      };
+    } else {
+      // Contain/kleiner: Bild < Viewport → Position = wo im Viewport das Bild sitzt
+      const freeX = vpW - scaledW;
+      const freeY = vpH - scaledH;
+      const px = freeX > 0 ? Math.round((imgX / freeX) * 100) : 50;
+      const py = freeY > 0 ? Math.round((imgY / freeY) * 100) : 50;
+      return {
+        x: Math.max(0, Math.min(100, px)),
+        y: Math.max(0, Math.min(100, py)),
+        fit: 'contain'
+      };
+    }
   }
 
   // ── Overlay DOM aufbauen ───────────────────────────────────
@@ -1684,8 +1714,18 @@
         #ipt-workspace {
           position: relative; overflow: visible;
           border: 2px solid rgba(255,255,255,0.3);
-          cursor: grab; background: repeating-conic-gradient(
+          cursor: grab;
+          /* Default: Checkerboard (transparent-Indikator) */
+          background: repeating-conic-gradient(
             #222 0% 25%, #333 0% 50%) 50% / 20px 20px;
+          transition: background-color 0.3s;
+        }
+        #ipt-workspace.has-bg {
+          /* Eleganter Stoff-Hintergrund wenn Bild kleiner als Viewport */
+          background: ${ELEGANT_BG_COLOR};
+          background-image:
+            repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(255,255,255,0.02) 8px, rgba(255,255,255,0.02) 16px),
+            repeating-linear-gradient(-45deg, transparent, transparent 8px, rgba(255,255,255,0.015) 8px, rgba(255,255,255,0.015) 16px);
         }
         #ipt-workspace.dragging { cursor: grabbing; }
         #ipt-img {
@@ -1926,11 +1966,18 @@
     dotVp.style.left = vpCenterX + 'px';
     dotVp.style.top = vpCenterY + 'px';
 
+    // Workspace-Hintergrund: elegant wenn Bild kleiner als Viewport
+    const workspace = overlayEl.querySelector('#ipt-workspace');
+    const cover = isCoverMode();
+    workspace.classList.toggle('has-bg', !cover);
+
     // Ergebnis-Werte berechnen
     const pos = calcObjectPosition();
-    const fileName = targetImg.src.split('/').pop();
+    const fitLabel = pos.fit === 'cover' ? 'cover' : 'contain';
+    const bgNote = !cover ? ` + Hintergrund: ${ELEGANT_BG_COLOR}` : '';
     info.innerHTML =
-      `<code>object-position: ${pos.x}% ${pos.y}%;</code> ` +
+      `<code>object-fit: ${fitLabel}; object-position: ${pos.x}% ${pos.y}%;</code>` +
+      `<span style="color:${cover ? '#4ade80' : '#fbbf24'}">${bgNote}</span>` +
       `&nbsp; Scale: ${(imgScale * 100).toFixed(0)}%` +
       `<br><small>Scroll = Zoom, Drag = Verschieben, Ecken = Skalieren</small>`;
   }
@@ -2032,46 +2079,75 @@
     setScale(imgScale * delta);
   }
 
-  // ── Skalierung setzen (Mindest: cover) ─────────────────────
+  // ── Skalierung setzen (rein- UND rauszoomen) ───────────────
   function setScale(newScale) {
-    const minScale = Math.max(vpW / naturalW, vpH / naturalH);
-    imgScale = Math.max(minScale, Math.min(newScale, minScale * 5));
+    const coverScale = Math.max(vpW / naturalW, vpH / naturalH);
+    const minScale = coverScale * MIN_SCALE_FACTOR;
+    const maxScale = coverScale * MAX_SCALE_FACTOR;
+    imgScale = Math.max(minScale, Math.min(newScale, maxScale));
     clampPosition();
     updatePreview();
   }
 
-  // ── Position begrenzen (Bild immer >= Viewport) ────────────
+  // ── Position begrenzen (funktioniert für Bild >= und < Viewport) ──
   function clampPosition() {
     const scaledW = naturalW * imgScale;
     const scaledH = naturalH * imgScale;
-    const minX = vpW - scaledW;
-    const minY = vpH - scaledH;
-    imgX = Math.min(0, Math.max(minX, imgX));
-    imgY = Math.min(0, Math.max(minY, imgY));
+
+    if (scaledW >= vpW) {
+      // Bild breiter als Viewport: Bild muss Viewport abdecken
+      imgX = Math.min(0, Math.max(vpW - scaledW, imgX));
+    } else {
+      // Bild schmaler als Viewport: Bild bleibt innerhalb des Viewports
+      imgX = Math.max(0, Math.min(vpW - scaledW, imgX));
+    }
+
+    if (scaledH >= vpH) {
+      imgY = Math.min(0, Math.max(vpH - scaledH, imgY));
+    } else {
+      imgY = Math.max(0, Math.min(vpH - scaledH, imgY));
+    }
   }
 
   // ── CSS übernehmen (live auf das Slider-Bild) ──────────────
   function applyCss() {
     if (!targetImg) return;
     const pos = calcObjectPosition();
-    targetImg.style.objectFit = 'cover';
+    targetImg.style.objectFit = pos.fit;
     targetImg.style.objectPosition = `${pos.x}% ${pos.y}%`;
-    showToast(`Gespeichert: object-position: ${pos.x}% ${pos.y}%`);
+
+    if (pos.fit === 'contain') {
+      // Hintergrund auf Bild-Element setzen (zeigt durch bei contain)
+      targetImg.style.backgroundColor = ELEGANT_BG_COLOR;
+      targetImg.style.backgroundImage =
+        'repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(255,255,255,0.02) 8px, rgba(255,255,255,0.02) 16px), ' +
+        'repeating-linear-gradient(-45deg, transparent, transparent 8px, rgba(255,255,255,0.015) 8px, rgba(255,255,255,0.015) 16px)';
+      showToast(`Gespeichert: ${pos.fit} ${pos.x}% ${pos.y}% + Hintergrund`);
+    } else {
+      // Cover: Hintergrund entfernen falls vorher gesetzt
+      targetImg.style.backgroundColor = '';
+      targetImg.style.backgroundImage = '';
+      showToast(`Gespeichert: object-position: ${pos.x}% ${pos.y}%`);
+    }
   }
 
   // ── JSON kopieren ──────────────────────────────────────────
   function copyJson() {
     const pos = calcObjectPosition();
     const fileName = targetImg.src.split('/').pop();
-    const json = JSON.stringify({
+    const data = {
       image: fileName,
-      objectFit: 'cover',
+      objectFit: pos.fit,
       objectPosition: `${pos.x}% ${pos.y}%`
-    }, null, 2);
+    };
+    if (pos.fit === 'contain') {
+      data.backgroundColor = ELEGANT_BG_COLOR;
+      data.backgroundPattern = 'linen-subtle';
+    }
+    const json = JSON.stringify(data, null, 2);
     navigator.clipboard.writeText(json).then(() => {
       showToast('JSON in Zwischenablage kopiert!');
     }).catch(() => {
-      // Fallback: Textfeld
       prompt('JSON kopieren:', json);
     });
   }
