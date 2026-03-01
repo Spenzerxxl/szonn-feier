@@ -66,6 +66,12 @@
       object-fit: cover;
     }
 
+    /* Per-Bild Positionierung: Motive (Köpfe/Katzen) sichtbar halten */
+    .slide:nth-child(1) img { object-position: center 20%; }
+    .slide:nth-child(2) img { object-position: center 25%; }
+    .slide:nth-child(3) img { object-position: center 25%; }
+    .slide:nth-child(4) img { object-fit: contain; background-color: #2c3e50; }
+
     .hero-overlay {
       position: absolute;
       top: 0; left: 0;
