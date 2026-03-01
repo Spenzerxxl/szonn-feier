@@ -1355,6 +1355,10 @@
         edit_token: returnedEditToken,
         programm_details: programmDetails.join(', '),
         anzahl_begleitung: companionCount,
+        begleitpersonen: Array.from({length: companionCount}, (_, i) => ({
+          vorname: savedCompanions[i]?.vorname || '',
+          nachname: savedCompanions[i]?.nachname || ''
+        })),
       });
 
       // Show thank you
