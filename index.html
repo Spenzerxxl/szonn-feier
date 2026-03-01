@@ -1583,6 +1583,7 @@
   let resizing = false;
   let dragStartX, dragStartY, dragStartImgX, dragStartImgY;
   let resizeStartDist, resizeStartScale;
+  let savedSlideState = null;   // Originalzustand vor dem Tool (für Abbrechen)
 
   // ── Aktivierung per Tastenkombination ──────────────────────
   document.addEventListener('keydown', function(e) {
@@ -1608,11 +1609,26 @@
   function openOverlay() {
     targetImg = getActiveSlideImg();
     if (!targetImg) return;
+    const slide = targetImg.closest('.slide');
 
     // Slider-Autoplay stoppen
     if (typeof clearInterval !== 'undefined' && typeof slideInterval !== 'undefined') {
       clearInterval(slideInterval);
     }
+
+    // Originalzustand sichern (für Abbrechen)
+    savedSlideState = {
+      imgDisplay: targetImg.style.display,
+      imgObjectFit: targetImg.style.objectFit,
+      imgObjectPosition: targetImg.style.objectPosition,
+      imgBgColor: targetImg.style.backgroundColor,
+      imgBgImage: targetImg.style.backgroundImage,
+      slideBgImage: slide.style.backgroundImage,
+      slideBgSize: slide.style.backgroundSize,
+      slideBgPosition: slide.style.backgroundPosition,
+      slideBgRepeat: slide.style.backgroundRepeat,
+      slideBgColor: slide.style.backgroundColor
+    };
 
     // Viewport-Größe = Slider-Bereich
     const heroEl = document.querySelector('.hero');
@@ -1623,21 +1639,52 @@
     naturalW = targetImg.naturalWidth;
     naturalH = targetImg.naturalHeight;
 
-    // Aktuelle object-position parsen
-    const computed = getComputedStyle(targetImg);
-    const objPos = computed.objectPosition || 'center center';
+    // Prüfen ob Slide im background-image-Modus ist (vorheriges Speichern)
+    const hasBgMode = targetImg.style.display === 'none' && slide.style.backgroundImage;
 
-    // Anfangs-Skalierung berechnen: cover-Logik
-    const scaleX = vpW / naturalW;
-    const scaleY = vpH / naturalH;
-    imgScale = Math.max(scaleX, scaleY);
+    if (hasBgMode) {
+      // Img temporär anzeigen für das Tool
+      targetImg.style.display = '';
 
-    // Anfangs-Position aus object-position berechnen
-    const parsed = parseObjectPosition(objPos);
-    const scaledW = naturalW * imgScale;
-    const scaledH = naturalH * imgScale;
-    imgX = -(parsed.x / 100) * (scaledW - vpW);
-    imgY = -(parsed.y / 100) * (scaledH - vpH);
+      // Scale aus background-size ableiten (px-Werte)
+      const bgSize = slide.style.backgroundSize || '';
+      const pxMatch = bgSize.match(/([\d.]+)px\s+([\d.]+)px/);
+      if (pxMatch) {
+        const bgW = parseFloat(pxMatch[1]);
+        imgScale = bgW / naturalW;
+      } else {
+        imgScale = Math.max(vpW / naturalW, vpH / naturalH);
+      }
+
+      // Position aus background-position ableiten
+      const bgPos = slide.style.backgroundPosition || '50% 50%';
+      const posMatch = bgPos.match(/([\d.]+)%\s+([\d.]+)%/);
+      const posXPct = posMatch ? parseFloat(posMatch[1]) : 50;
+      const posYPct = posMatch ? parseFloat(posMatch[2]) : 50;
+      const scaledW = naturalW * imgScale;
+      const scaledH = naturalH * imgScale;
+      imgX = (posXPct / 100) * (vpW - scaledW);
+      imgY = (posYPct / 100) * (vpH - scaledH);
+
+      console.log('[ImgPosTool] Restored from bg-mode:', { imgScale, imgX, imgY, bgSize, bgPos });
+    } else {
+      // Standard: aus object-position lesen
+      const computed = getComputedStyle(targetImg);
+      const objPos = computed.objectPosition || 'center center';
+
+      // Anfangs-Skalierung: cover-Logik
+      imgScale = Math.max(vpW / naturalW, vpH / naturalH);
+
+      // Anfangs-Position aus object-position berechnen
+      // Einheitliche Formel: offset = (positionPct / 100) * (vpSize - scaledSize)
+      const parsed = parseObjectPosition(objPos);
+      const scaledW = naturalW * imgScale;
+      const scaledH = naturalH * imgScale;
+      imgX = (parsed.x / 100) * (vpW - scaledW);
+      imgY = (parsed.y / 100) * (vpH - scaledH);
+
+      console.log('[ImgPosTool] Opened from object-position:', { objPos, imgScale, imgX, imgY });
+    }
 
     buildOverlayDOM();
     isOpen = true;
@@ -1667,34 +1714,42 @@
     return scaledW >= vpW - 0.5 && scaledH >= vpH - 0.5;
   }
 
-  // ── Position → object-position %-Werte ─────────────────────
-  function calcObjectPosition() {
+  // ── Ergebnis berechnen: Position, Fit-Modus, Background-Size ─
+  // Einheitliche Formel für background-position UND object-position:
+  //   percentage = offset / (containerSize - imageSize) * 100
+  // Funktioniert für Bild > Viewport (cover) UND Bild < Viewport
+  function calcResult() {
     const scaledW = naturalW * imgScale;
     const scaledH = naturalH * imgScale;
+    const coverScale = Math.max(vpW / naturalW, vpH / naturalH);
+    const atCoverScale = Math.abs(imgScale - coverScale) / coverScale < 0.02;
+    const covers = scaledW >= vpW - 0.5 && scaledH >= vpH - 0.5;
 
-    if (isCoverMode()) {
-      // Cover: Bild >= Viewport → Position = wie weit das Bild verschoben ist
-      const maxOffsetX = scaledW - vpW;
-      const maxOffsetY = scaledH - vpH;
-      const px = maxOffsetX > 0 ? Math.round((-imgX / maxOffsetX) * 100) : 50;
-      const py = maxOffsetY > 0 ? Math.round((-imgY / maxOffsetY) * 100) : 50;
-      return {
-        x: Math.max(0, Math.min(100, px)),
-        y: Math.max(0, Math.min(100, py)),
-        fit: 'cover'
-      };
-    } else {
-      // Contain/kleiner: Bild < Viewport → Position = wo im Viewport das Bild sitzt
-      const freeX = vpW - scaledW;
-      const freeY = vpH - scaledH;
-      const px = freeX > 0 ? Math.round((imgX / freeX) * 100) : 50;
-      const py = freeY > 0 ? Math.round((imgY / freeY) * 100) : 50;
-      return {
-        x: Math.max(0, Math.min(100, px)),
-        y: Math.max(0, Math.min(100, py)),
-        fit: 'contain'
-      };
-    }
+    // Einheitliche Positionsberechnung
+    const diffW = vpW - scaledW;
+    const diffH = vpH - scaledH;
+    const px = Math.abs(diffW) > 0.5 ? (imgX / diffW) * 100 : 50;
+    const py = Math.abs(diffH) > 0.5 ? (imgY / diffH) * 100 : 50;
+
+    const result = {
+      x: Math.max(0, Math.min(100, Math.round(px))),
+      y: Math.max(0, Math.min(100, Math.round(py))),
+      // Cover nur wenn Zoom ≈ Cover-Scale UND Bild deckt Viewport ab
+      fit: (atCoverScale && covers) ? 'cover' : 'background',
+      covers: covers,
+      scaledW: Math.round(scaledW),
+      scaledH: Math.round(scaledH)
+    };
+
+    console.log('[ImgPosTool] calcResult:', {
+      imgX: imgX.toFixed(1), imgY: imgY.toFixed(1),
+      imgScale: imgScale.toFixed(4), coverScale: coverScale.toFixed(4),
+      scaledW: result.scaledW, scaledH: result.scaledH,
+      vpW, vpH, atCoverScale, covers,
+      posX: result.x, posY: result.y, fit: result.fit
+    });
+
+    return result;
   }
 
   // ── Overlay DOM aufbauen ───────────────────────────────────
@@ -1972,14 +2027,21 @@
     workspace.classList.toggle('has-bg', !cover);
 
     // Ergebnis-Werte berechnen
-    const pos = calcObjectPosition();
-    const fitLabel = pos.fit === 'cover' ? 'cover' : 'contain';
-    const bgNote = !cover ? ` + Hintergrund: ${ELEGANT_BG_COLOR}` : '';
-    info.innerHTML =
-      `<code>object-fit: ${fitLabel}; object-position: ${pos.x}% ${pos.y}%;</code>` +
-      `<span style="color:${cover ? '#4ade80' : '#fbbf24'}">${bgNote}</span>` +
-      `&nbsp; Scale: ${(imgScale * 100).toFixed(0)}%` +
-      `<br><small>Scroll = Zoom, Drag = Verschieben, Ecken = Skalieren</small>`;
+    const result = calcResult();
+    if (result.fit === 'cover') {
+      info.innerHTML =
+        `<code>object-fit: cover; object-position: ${result.x}% ${result.y}%;</code>` +
+        `<span style="color:#4ade80"> Cover</span>` +
+        `&nbsp; Scale: ${(imgScale * 100).toFixed(0)}%` +
+        `<br><small>Scroll = Zoom, Drag = Verschieben, Ecken = Skalieren</small>`;
+    } else {
+      info.innerHTML =
+        `<code>background-size: ${result.scaledW}px ${result.scaledH}px; ` +
+        `background-position: ${result.x}% ${result.y}%;</code>` +
+        `<span style="color:#fbbf24"> + BG: ${ELEGANT_BG_COLOR}</span>` +
+        `&nbsp; Scale: ${(imgScale * 100).toFixed(0)}%` +
+        `<br><small>Scroll = Zoom, Drag = Verschieben, Ecken = Skalieren</small>`;
+    }
   }
 
   // ── Drag-Handlers ──────────────────────────────────────────
@@ -2112,38 +2174,64 @@
   // ── CSS übernehmen (live auf das Slider-Bild) ──────────────
   function applyCss() {
     if (!targetImg) return;
-    const pos = calcObjectPosition();
-    targetImg.style.objectFit = pos.fit;
-    targetImg.style.objectPosition = `${pos.x}% ${pos.y}%`;
+    const result = calcResult();
+    const slide = targetImg.closest('.slide');
 
-    if (pos.fit === 'contain') {
-      // Hintergrund auf Bild-Element setzen (zeigt durch bei contain)
-      targetImg.style.backgroundColor = ELEGANT_BG_COLOR;
-      targetImg.style.backgroundImage =
-        'repeating-linear-gradient(45deg, transparent, transparent 8px, rgba(255,255,255,0.02) 8px, rgba(255,255,255,0.02) 16px), ' +
-        'repeating-linear-gradient(-45deg, transparent, transparent 8px, rgba(255,255,255,0.015) 8px, rgba(255,255,255,0.015) 16px)';
-      showToast(`Gespeichert: ${pos.fit} ${pos.x}% ${pos.y}% + Hintergrund`);
+    // Zuerst alles aufräumen (vorherigen Modus entfernen)
+    targetImg.style.backgroundColor = '';
+    targetImg.style.backgroundImage = '';
+    slide.style.backgroundImage = '';
+    slide.style.backgroundSize = '';
+    slide.style.backgroundPosition = '';
+    slide.style.backgroundRepeat = '';
+    slide.style.backgroundColor = '';
+
+    if (result.fit === 'cover') {
+      // Cover-Modus: object-fit CSS (Zoom ≈ Cover-Scale)
+      targetImg.style.display = '';
+      targetImg.style.objectFit = 'cover';
+      targetImg.style.objectPosition = `${result.x}% ${result.y}%`;
+      showToast(`Cover: object-position: ${result.x}% ${result.y}%`);
     } else {
-      // Cover: Hintergrund entfernen falls vorher gesetzt
-      targetImg.style.backgroundColor = '';
-      targetImg.style.backgroundImage = '';
-      showToast(`Gespeichert: object-position: ${pos.x}% ${pos.y}%`);
+      // Background-Image-Modus: exakte Kontrolle über Scale + Position
+      // <img> verstecken, Bild als background auf .slide setzen
+      targetImg.style.display = 'none';
+      slide.style.backgroundImage = `url(${targetImg.src})`;
+      slide.style.backgroundSize = `${result.scaledW}px ${result.scaledH}px`;
+      slide.style.backgroundPosition = `${result.x}% ${result.y}%`;
+      slide.style.backgroundRepeat = 'no-repeat';
+      slide.style.backgroundColor = ELEGANT_BG_COLOR;
+      showToast(`BG: ${result.scaledW}x${result.scaledH}px @ ${result.x}% ${result.y}%`);
     }
+
+    // savedSlideState nullen → Abbrechen macht Speicherung nicht rückgängig
+    savedSlideState = null;
+    console.log('[ImgPosTool] Applied:', result);
   }
 
   // ── JSON kopieren ──────────────────────────────────────────
   function copyJson() {
-    const pos = calcObjectPosition();
+    const result = calcResult();
     const fileName = targetImg.src.split('/').pop();
-    const data = {
-      image: fileName,
-      objectFit: pos.fit,
-      objectPosition: `${pos.x}% ${pos.y}%`
-    };
-    if (pos.fit === 'contain') {
-      data.backgroundColor = ELEGANT_BG_COLOR;
-      data.backgroundPattern = 'linen-subtle';
+    let data;
+
+    if (result.fit === 'cover') {
+      data = {
+        image: fileName,
+        objectFit: 'cover',
+        objectPosition: `${result.x}% ${result.y}%`
+      };
+    } else {
+      data = {
+        image: fileName,
+        mode: 'background-image',
+        backgroundSize: `${result.scaledW}px ${result.scaledH}px`,
+        backgroundPosition: `${result.x}% ${result.y}%`,
+        backgroundColor: ELEGANT_BG_COLOR,
+        viewportAtSave: `${vpW}x${vpH}`
+      };
     }
+
     const json = JSON.stringify(data, null, 2);
     navigator.clipboard.writeText(json).then(() => {
       showToast('JSON in Zwischenablage kopiert!');
@@ -2159,8 +2247,9 @@
     imgScale = Math.max(scaleX, scaleY);
     const scaledW = naturalW * imgScale;
     const scaledH = naturalH * imgScale;
-    imgX = -(scaledW - vpW) / 2;
-    imgY = -(scaledH - vpH) / 2;
+    // Einheitliche Formel: zentriert = 50% → offset = 0.5 * (vpSize - scaledSize)
+    imgX = (vpW - scaledW) / 2;
+    imgY = (vpH - scaledH) / 2;
     updatePreview();
   }
 
@@ -2175,6 +2264,23 @@
   // ── Overlay schließen ──────────────────────────────────────
   function closeOverlay() {
     if (!overlayEl) return;
+
+    // Originalzustand wiederherstellen (nur wenn nicht gespeichert wurde)
+    if (savedSlideState && targetImg) {
+      const slide = targetImg.closest('.slide');
+      targetImg.style.display = savedSlideState.imgDisplay;
+      targetImg.style.objectFit = savedSlideState.imgObjectFit;
+      targetImg.style.objectPosition = savedSlideState.imgObjectPosition;
+      targetImg.style.backgroundColor = savedSlideState.imgBgColor;
+      targetImg.style.backgroundImage = savedSlideState.imgBgImage;
+      slide.style.backgroundImage = savedSlideState.slideBgImage;
+      slide.style.backgroundSize = savedSlideState.slideBgSize;
+      slide.style.backgroundPosition = savedSlideState.slideBgPosition;
+      slide.style.backgroundRepeat = savedSlideState.slideBgRepeat;
+      slide.style.backgroundColor = savedSlideState.slideBgColor;
+      console.log('[ImgPosTool] Restored original state (cancelled)');
+    }
+    savedSlideState = null;
 
     // Event-Listener aufräumen
     document.removeEventListener('mousemove', onResizeMove);
