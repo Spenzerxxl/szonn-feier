@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin – CK-Feier Dashboard</title>
+  <meta name="robots" content="noindex, nofollow">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #5b3a6b;
+      --primary-light: #7d5a8e;
+      --primary-dark: #3d2548;
+      --accent: #c9956b;
+      --accent-light: #e8c9a8;
+      --bg: #f4f1ed;
+      --card: #fff;
+      --text: #2d2d2d;
+      --text-light: #666;
+      --border: #e0dbd5;
+      --success: #4a8c6f;
+      --warning: #e8a838;
+      --error: #c0392b;
+      --radius: 12px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* Login */
+    .login-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .login-overlay.hidden { display: none; }
+
+    .login-box {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 2.5rem;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      text-align: center;
+      max-width: 380px;
+      width: 90%;
+    }
+
+    .login-box h2 {
+      color: var(--primary);
+      font-size: 1.3rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .login-box input {
+      width: 100%;
+      padding: 0.8rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .login-box input:focus {
+      outline: none;
+      border-color: var(--primary-light);
+    }
+
+    .login-box button {
+      width: 100%;
+      padding: 0.8rem;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    .login-box button:hover { background: var(--primary-dark); }
+
+    .login-error {
+      color: var(--error);
+      font-size: 0.85rem;
+      margin-top: 0.5rem;
+      display: none;
+    }
+
+    /* Dashboard */
+    .dashboard { display: none; }
+    .dashboard.visible { display: block; }
+
+    .header {
+      background: var(--primary);
+      color: #fff;
+      padding: 1rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .header h1 {
+      font-size: 1.2rem;
+      font-weight: 500;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 0.8rem;
+      align-items: center;
+    }
+
+    .header-btn {
+      background: rgba(255,255,255,0.15);
+      border: none;
+      color: #fff;
+      padding: 0.4rem 0.8rem;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .header-btn:hover { background: rgba(255,255,255,0.25); }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+    }
+
+    .tab {
+      padding: 0.8rem 1.2rem;
+      border: none;
+      background: transparent;
+      font-size: 0.9rem;
+      cursor: pointer;
+      color: var(--text-light);
+      white-space: nowrap;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+      font-weight: 600;
+    }
+
+    .tab:hover { color: var(--primary); }
+
+    /* Content */
+    .content {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* Stats */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-light);
+      margin-top: 0.3rem;
+    }
+
+    .stat-card.highlight {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      color: #fff;
+    }
+
+    .stat-card.highlight .stat-value { color: #fff; }
+    .stat-card.highlight .stat-label { color: rgba(255,255,255,0.8); }
+
+    /* Table */
+    .table-container {
+      background: var(--card);
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .table-header {
+      padding: 1rem 1.2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .table-header h3 {
+      font-size: 1rem;
+      color: var(--primary);
+    }
+
+    .table-search {
+      padding: 0.5rem 0.8rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.85rem;
+      width: 220px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      background: #f8f5f2;
+      padding: 0.7rem 1rem;
+      text-align: left;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-light);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    thead th:hover { color: var(--primary); }
+
+    tbody td {
+      padding: 0.7rem 1rem;
+      font-size: 0.9rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    tbody tr:hover { background: #faf8f5; }
+
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.5rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .badge-success { background: #e8f5e9; color: var(--success); }
+    .badge-error { background: #fde8e8; color: var(--error); }
+    .badge-info { background: #e8eaf6; color: #3f51b5; }
+
+    .check { color: var(--success); font-weight: bold; }
+    .cross { color: #ccc; }
+
+    /* Program Lists */
+    .program-section {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .program-section h3 {
+      font-size: 1rem;
+      color: var(--primary);
+      margin-bottom: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .program-count {
+      background: var(--primary);
+      color: #fff;
+      font-size: 0.8rem;
+      padding: 0.1rem 0.5rem;
+      border-radius: 12px;
+    }
+
+    .person-list {
+      list-style: none;
+    }
+
+    .person-list li {
+      padding: 0.4rem 0;
+      font-size: 0.9rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .person-list li:last-child { border-bottom: none; }
+
+    .person-type {
+      font-size: 0.75rem;
+      color: var(--text-light);
+    }
+
+    /* Food */
+    .food-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .table-container { overflow-x: auto; }
+      table { min-width: 600px; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 480px) {
+      .stats-grid { grid-template-columns: 1fr; }
+      .header h1 { font-size: 1rem; }
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 3rem;
+      color: var(--text-light);
+    }
+
+    .spinner-large {
+      display: inline-block;
+      width: 40px; height: 40px;
+      border: 3px solid var(--border);
+      border-radius: 50%;
+      border-top-color: var(--primary);
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Delete button */
+    .btn-delete {
+      background: none;
+      border: none;
+      color: var(--error);
+      cursor: pointer;
+      font-size: 0.8rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+    }
+
+    .btn-delete:hover { background: #fde8e8; }
+  </style>
+</head>
+<body>
+
+<!-- Login -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <h2>CK-Feier Dashboard</h2>
+    <input type="password" id="loginPassword" placeholder="Passwort eingeben" autofocus>
+    <button onclick="doLogin()">Anmelden</button>
+    <div class="login-error" id="loginError">Falsches Passwort.</div>
+  </div>
+</div>
+
+<!-- Dashboard -->
+<div class="dashboard" id="dashboard">
+  <div class="header">
+    <h1>CK-Feier Dashboard</h1>
+    <div class="header-actions">
+      <button class="header-btn" onclick="loadAllData()">Aktualisieren</button>
+      <button class="header-btn" onclick="doLogout()">Abmelden</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="overview">Übersicht</button>
+    <button class="tab" data-tab="guests">Gästeliste</button>
+    <button class="tab" data-tab="program">Programm</button>
+    <button class="tab" data-tab="food">Essen</button>
+    <button class="tab" data-tab="export">Export</button>
+  </div>
+
+  <div class="content">
+
+    <!-- Overview -->
+    <div class="tab-panel active" id="panel-overview">
+      <div class="stats-grid" id="statsGrid">
+        <div class="loading"><div class="spinner-large"></div><p>Lade Daten...</p></div>
+      </div>
+    </div>
+
+    <!-- Guests -->
+    <div class="tab-panel" id="panel-guests">
+      <div class="table-container">
+        <div class="table-header">
+          <h3>Alle Anmeldungen</h3>
+          <input type="text" class="table-search" id="guestSearch" placeholder="Suchen..." oninput="filterGuests()">
+        </div>
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr>
+                <th onclick="sortGuests('name')">Name</th>
+                <th onclick="sortGuests('email')">E-Mail</th>
+                <th onclick="sortGuests('telefon')">Telefon</th>
+                <th onclick="sortGuests('status')">Status</th>
+                <th onclick="sortGuests('begleitung')">Begleitung</th>
+                <th onclick="sortGuests('created_at')">Datum</th>
+                <th>Aktionen</th>
+              </tr>
+            </thead>
+            <tbody id="guestsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Program -->
+    <div class="tab-panel" id="panel-program">
+      <div id="programContent">
+        <div class="loading"><div class="spinner-large"></div><p>Lade Daten...</p></div>
+      </div>
+    </div>
+
+    <!-- Food -->
+    <div class="tab-panel" id="panel-food">
+      <div class="food-grid" id="foodContent">
+        <div class="loading"><div class="spinner-large"></div><p>Lade Daten...</p></div>
+      </div>
+    </div>
+
+    <!-- Export -->
+    <div class="tab-panel" id="panel-export">
+      <div class="program-section">
+        <h3>Daten exportieren</h3>
+        <p style="color:var(--text-light); margin-bottom:1rem;">Lade die Gästedaten als CSV-Datei herunter.</p>
+        <button class="header-btn" style="background:var(--primary); color:#fff; padding:0.7rem 1.5rem; font-size:0.95rem; border-radius:8px;" onclick="exportCSV('all')">
+          Alle Anmeldungen (CSV)
+        </button>
+        <button class="header-btn" style="background:var(--success); color:#fff; padding:0.7rem 1.5rem; font-size:0.95rem; border-radius:8px; margin-left:0.5rem;" onclick="exportCSV('zusagen')">
+          Nur Zusagen (CSV)
+        </button>
+        <button class="header-btn" style="background:var(--accent); color:#fff; padding:0.7rem 1.5rem; font-size:0.95rem; border-radius:8px; margin-left:0.5rem;" onclick="exportCSV('teilnehmer')">
+          Alle Teilnehmenden inkl. Begleitung (CSV)
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ===== CONFIG =====
+  const SUPABASE_URL = 'https://supabase.hanse-ai.de';
+  const SERVICE_KEY = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc3MDIwNzEyMCwiZXhwIjo0OTI1ODgwNzIwLCJyb2xlIjoic2VydmljZV9yb2xlIn0.bmGXlViiwAiLILIVmc_3uo2pKJ-0b3Lg-1PRutzK0lw';
+  const PASSWORD = 'szonn2026';
+
+  let allAnmeldungen = [];
+  let allBegleitpersonen = [];
+  let allTeilnehmer = [];
+  let sortField = 'created_at';
+  let sortDir = 'desc';
+
+  // ===== LOGIN =====
+  document.getElementById('loginPassword').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+
+  function doLogin() {
+    const pw = document.getElementById('loginPassword').value;
+    if (pw === PASSWORD) {
+      document.getElementById('loginOverlay').classList.add('hidden');
+      document.getElementById('dashboard').classList.add('visible');
+      loadAllData();
+    } else {
+      document.getElementById('loginError').style.display = 'block';
+    }
+  }
+
+  function doLogout() {
+    document.getElementById('loginOverlay').classList.remove('hidden');
+    document.getElementById('dashboard').classList.remove('visible');
+    document.getElementById('loginPassword').value = '';
+  }
+
+  // Check if already logged in via session
+  if (sessionStorage.getItem('ck_admin') === PASSWORD) {
+    document.getElementById('loginOverlay').classList.add('hidden');
+    document.getElementById('dashboard').classList.add('visible');
+    setTimeout(loadAllData, 100);
+  }
+
+  // ===== TABS =====
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(`panel-${tab.dataset.tab}`).classList.add('active');
+    });
+  });
+
+  // ===== DATA LOADING =====
+  async function apiGet(path) {
+    const resp = await fetch(SUPABASE_URL + path, {
+      headers: {
+        'apikey': SERVICE_KEY,
+        'Authorization': `Bearer ${SERVICE_KEY}`,
+      }
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    return resp.json();
+  }
+
+  async function apiDelete(path) {
+    const resp = await fetch(SUPABASE_URL + path, {
+      method: 'DELETE',
+      headers: {
+        'apikey': SERVICE_KEY,
+        'Authorization': `Bearer ${SERVICE_KEY}`,
+      }
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  }
+
+  async function loadAllData() {
+    sessionStorage.setItem('ck_admin', PASSWORD);
+    try {
+      const [anmeldungen, begleitpersonen, teilnehmer, stats] = await Promise.all([
+        apiGet('/rest/v1/ck_anmeldungen?select=*&order=created_at.desc'),
+        apiGet('/rest/v1/ck_begleitpersonen?select=*'),
+        apiGet('/rest/v1/ck_teilnehmer_komplett?select=*'),
+        apiGet('/rest/v1/ck_statistiken?select=*'),
+      ]);
+
+      allAnmeldungen = anmeldungen;
+      allBegleitpersonen = begleitpersonen;
+      allTeilnehmer = teilnehmer;
+
+      renderStats(stats[0] || {});
+      renderGuests();
+      renderProgram();
+      renderFood();
+    } catch (err) {
+      console.error('Fehler beim Laden:', err);
+    }
+  }
+
+  // ===== STATS =====
+  function renderStats(s) {
+    document.getElementById('statsGrid').innerHTML = `
+      <div class="stat-card highlight">
+        <div class="stat-value">${s.gesamt_personen || 0}</div>
+        <div class="stat-label">Personen gesamt</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${s.zusagen || 0}</div>
+        <div class="stat-label">Zusagen</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${s.absagen || 0}</div>
+        <div class="stat-label">Absagen</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${s.begleitpersonen || 0}</div>
+        <div class="stat-label">Begleitpersonen</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${s.stadtfuehrung_total || 0}</div>
+        <div class="stat-label">Stadtführung</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${s.logenhaus_tour_total || 0}</div>
+        <div class="stat-label">Logenhausführung</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${s.vegan_total || 0}</div>
+        <div class="stat-label">Vegan</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">${s.glutenfrei_total || 0}</div>
+        <div class="stat-label">Glutenfrei</div>
+      </div>
+    `;
+  }
+
+  // ===== GUESTS TABLE =====
+  function renderGuests() {
+    const body = document.getElementById('guestsBody');
+    const search = (document.getElementById('guestSearch').value || '').toLowerCase();
+
+    let data = allAnmeldungen.filter(a => {
+      if (!search) return true;
+      return `${a.vorname} ${a.nachname} ${a.email}`.toLowerCase().includes(search);
+    });
+
+    // Sort
+    data.sort((a, b) => {
+      let va, vb;
+      switch (sortField) {
+        case 'name': va = `${a.nachname} ${a.vorname}`; vb = `${b.nachname} ${b.vorname}`; break;
+        case 'email': va = a.email; vb = b.email; break;
+        case 'status': va = a.nimmt_teil ? 'a' : 'b'; vb = b.nimmt_teil ? 'a' : 'b'; break;
+        case 'begleitung': va = a.anzahl_begleitung; vb = b.anzahl_begleitung; break;
+        default: va = a.created_at; vb = b.created_at;
+      }
+      if (va < vb) return sortDir === 'asc' ? -1 : 1;
+      if (va > vb) return sortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+    body.innerHTML = data.map(a => {
+      const companions = allBegleitpersonen.filter(b => b.anmeldung_id === a.id);
+      const compNames = companions.map(c => `${c.vorname} ${c.nachname}`).join(', ');
+      const date = new Date(a.created_at).toLocaleDateString('de-DE');
+
+      return `<tr>
+        <td><strong>${esc(a.vorname)} ${esc(a.nachname)}</strong></td>
+        <td>${esc(a.email)}</td>
+        <td>${esc(a.telefon || '-')}</td>
+        <td>${a.nimmt_teil
+          ? '<span class="badge badge-success">Zusage</span>'
+          : '<span class="badge badge-error">Absage</span>'}</td>
+        <td>${a.anzahl_begleitung > 0
+          ? `<span class="badge badge-info">${a.anzahl_begleitung}</span> ${esc(compNames)}`
+          : '-'}</td>
+        <td>${date}</td>
+        <td><button class="btn-delete" onclick="deleteAnmeldung('${a.id}', '${esc(a.vorname)} ${esc(a.nachname)}')">Löschen</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function filterGuests() { renderGuests(); }
+
+  function sortGuests(field) {
+    if (sortField === field) sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+    else { sortField = field; sortDir = 'asc'; }
+    renderGuests();
+  }
+
+  async function deleteAnmeldung(id, name) {
+    if (!confirm(`"${name}" wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.`)) return;
+    try {
+      await apiDelete(`/rest/v1/ck_begleitpersonen?anmeldung_id=eq.${id}`);
+      await apiDelete(`/rest/v1/ck_anmeldungen?id=eq.${id}`);
+      await loadAllData();
+    } catch (err) {
+      alert('Fehler: ' + err.message);
+    }
+  }
+
+  // ===== PROGRAM =====
+  function renderProgram() {
+    const stadtfuehrung = allTeilnehmer.filter(t => t.stadtfuehrung);
+    const logenhaus = allTeilnehmer.filter(t => t.logenhaus_tour);
+
+    document.getElementById('programContent').innerHTML = `
+      <div class="program-section">
+        <h3>Stadtführung – 15:30 Uhr <span class="program-count">${stadtfuehrung.length}</span></h3>
+        <ul class="person-list">
+          ${stadtfuehrung.map(t => `<li>${esc(t.name)} <span class="person-type">${esc(t.typ)}</span></li>`).join('')}
+          ${stadtfuehrung.length === 0 ? '<li style="color:var(--text-light)">Noch keine Anmeldungen</li>' : ''}
+        </ul>
+      </div>
+      <div class="program-section">
+        <h3>Logenhausführung – 17:30 Uhr <span class="program-count">${logenhaus.length}</span></h3>
+        <ul class="person-list">
+          ${logenhaus.map(t => `<li>${esc(t.name)} <span class="person-type">${esc(t.typ)}</span></li>`).join('')}
+          ${logenhaus.length === 0 ? '<li style="color:var(--text-light)">Noch keine Anmeldungen</li>' : ''}
+        </ul>
+      </div>
+      <div class="program-section">
+        <h3>Buffet – 18:15 Uhr <span class="program-count">${allTeilnehmer.length}</span></h3>
+        <ul class="person-list">
+          ${allTeilnehmer.map(t => `<li>${esc(t.name)} <span class="person-type">${esc(t.typ)}</span></li>`).join('')}
+          ${allTeilnehmer.length === 0 ? '<li style="color:var(--text-light)">Noch keine Anmeldungen</li>' : ''}
+        </ul>
+      </div>
+      <div class="program-section">
+        <h3>Comedy – 19:30 Uhr <span class="program-count">${allTeilnehmer.length}</span></h3>
+        <p style="color:var(--text-light)">Alle Gäste nehmen automatisch teil.</p>
+      </div>
+    `;
+  }
+
+  // ===== FOOD =====
+  function renderFood() {
+    const vegan = allTeilnehmer.filter(t => t.vegan);
+    const glutenfrei = allTeilnehmer.filter(t => t.glutenfrei);
+    const normal = allTeilnehmer.filter(t => !t.vegan && !t.glutenfrei);
+
+    document.getElementById('foodContent').innerHTML = `
+      <div class="program-section">
+        <h3>Normal <span class="program-count">${normal.length}</span></h3>
+        <ul class="person-list">
+          ${normal.map(t => `<li>${esc(t.name)} <span class="person-type">${esc(t.typ)}</span></li>`).join('')}
+          ${normal.length === 0 ? '<li style="color:var(--text-light)">Keine</li>' : ''}
+        </ul>
+      </div>
+      <div class="program-section">
+        <h3>Vegan <span class="program-count">${vegan.length}</span></h3>
+        <ul class="person-list">
+          ${vegan.map(t => `<li>${esc(t.name)} <span class="person-type">${esc(t.typ)}</span></li>`).join('')}
+          ${vegan.length === 0 ? '<li style="color:var(--text-light)">Keine</li>' : ''}
+        </ul>
+      </div>
+      <div class="program-section">
+        <h3>Glutenfrei <span class="program-count">${glutenfrei.length}</span></h3>
+        <ul class="person-list">
+          ${glutenfrei.map(t => `<li>${esc(t.name)} <span class="person-type">${esc(t.typ)}</span></li>`).join('')}
+          ${glutenfrei.length === 0 ? '<li style="color:var(--text-light)">Keine</li>' : ''}
+        </ul>
+      </div>
+    `;
+  }
+
+  // ===== CSV EXPORT =====
+  function exportCSV(type) {
+    let rows, filename;
+
+    if (type === 'teilnehmer') {
+      rows = [
+        ['Name', 'E-Mail', 'Telefon', 'Typ', 'Vegan', 'Glutenfrei', 'Stadtführung', 'Logenhausführung', 'Bemerkungen', 'Anmeldedatum'],
+        ...allTeilnehmer.map(t => [
+          t.name, t.email, t.telefon || '', t.typ,
+          t.vegan ? 'Ja' : 'Nein', t.glutenfrei ? 'Ja' : 'Nein',
+          t.stadtfuehrung ? 'Ja' : 'Nein', t.logenhaus_tour ? 'Ja' : 'Nein',
+          t.bemerkungen || '', new Date(t.created_at).toLocaleDateString('de-DE')
+        ])
+      ];
+      filename = 'ck-feier-teilnehmer.csv';
+    } else {
+      let data = allAnmeldungen;
+      if (type === 'zusagen') data = data.filter(a => a.nimmt_teil);
+      rows = [
+        ['Vorname', 'Nachname', 'E-Mail', 'Telefon', 'Status', 'Begleitpersonen', 'Vegan', 'Glutenfrei', 'Stadtführung', 'Logenhausführung', 'Bemerkungen', 'Anmeldedatum'],
+        ...data.map(a => [
+          a.vorname, a.nachname, a.email, a.telefon || '',
+          a.nimmt_teil ? 'Zusage' : 'Absage', a.anzahl_begleitung,
+          a.vegan ? 'Ja' : 'Nein', a.glutenfrei ? 'Ja' : 'Nein',
+          a.stadtfuehrung ? 'Ja' : 'Nein', a.logenhaus_tour ? 'Ja' : 'Nein',
+          a.bemerkungen || '', new Date(a.created_at).toLocaleDateString('de-DE')
+        ])
+      ];
+      filename = type === 'zusagen' ? 'ck-feier-zusagen.csv' : 'ck-feier-anmeldungen.csv';
+    }
+
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(';')).join('\n');
+    const bom = '\uFEFF';
+    const blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ===== UTILS =====
+  function esc(str) {
+    const div = document.createElement('div');
+    div.textContent = str || '';
+    return div.innerHTML;
+  }
+</script>
+
+</body>
+</html>

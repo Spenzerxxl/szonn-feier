@@ -1,0 +1,1540 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kristin & Christian laden ein</title>
+  <meta name="description" content="Einladung zum gemeinsamen 90. Geburtstag von Kristin & Christian Szonn am 23. Mai 2026">
+  <meta name="theme-color" content="#5b3a6b">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥂</text></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥂</text></svg>">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #5b3a6b;
+      --primary-light: #7d5a8e;
+      --primary-dark: #3d2548;
+      --accent: #c9956b;
+      --accent-light: #e8c9a8;
+      --bg: #faf8f5;
+      --text: #2d2d2d;
+      --text-light: #666;
+      --card-bg: #fff;
+      --border: #e8e0d8;
+      --success: #4a8c6f;
+      --error: #c0392b;
+      --radius: 12px;
+    }
+
+    body {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Hero Slider */
+    .hero {
+      position: relative;
+      height: 85vh;
+      min-height: 500px;
+      max-height: 800px;
+      overflow: hidden;
+    }
+
+    .slider {
+      position: relative;
+      width: 100%;
+      height: 100%;
+    }
+
+    .slide {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      opacity: 0;
+      transition: opacity 1.2s ease;
+    }
+
+    .slide.active { opacity: 1; }
+
+    .slide img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+
+    .hero-overlay {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: linear-gradient(
+        to bottom,
+        rgba(91,58,107,0.3) 0%,
+        rgba(91,58,107,0.5) 50%,
+        rgba(61,37,72,0.8) 100%
+      );
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 2rem;
+      z-index: 2;
+    }
+
+    .hero-title {
+      font-size: clamp(1.8rem, 5vw, 3.2rem);
+      color: #fff;
+      font-weight: normal;
+      letter-spacing: 0.05em;
+      text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+      margin-bottom: 0.5rem;
+    }
+
+    .hero-subtitle {
+      font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+      color: var(--accent-light);
+      letter-spacing: 0.08em;
+      text-shadow: 0 1px 10px rgba(0,0,0,0.3);
+      max-width: 600px;
+    }
+
+    .hero-divider {
+      width: 60px;
+      height: 2px;
+      background: var(--accent);
+      margin: 1.2rem auto;
+    }
+
+    .slider-dots {
+      position: absolute;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      z-index: 3;
+    }
+
+    .slider-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.4);
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .slider-dot.active {
+      background: #fff;
+      transform: scale(1.3);
+    }
+
+    .hero-scroll {
+      position: absolute;
+      bottom: 4rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3;
+      color: rgba(255,255,255,0.7);
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      animation: bounce 2s infinite;
+      cursor: pointer;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(-8px); }
+    }
+
+    /* Sections */
+    .section {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem;
+    }
+
+    .section-title {
+      font-size: 1.6rem;
+      color: var(--primary);
+      text-align: center;
+      margin-bottom: 0.5rem;
+      font-weight: normal;
+    }
+
+    .section-line {
+      width: 50px;
+      height: 2px;
+      background: var(--accent);
+      margin: 0 auto 2rem;
+    }
+
+    /* Welcome */
+    .welcome-text {
+      text-align: center;
+      font-size: 1.1rem;
+      color: var(--text);
+      line-height: 1.9;
+    }
+
+    .welcome-text p { margin-bottom: 1rem; }
+
+    /* Program */
+    .program-timeline {
+      position: relative;
+      padding-left: 2rem;
+    }
+
+    .program-timeline::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--accent-light);
+    }
+
+    .program-item {
+      position: relative;
+      margin-bottom: 2rem;
+      padding-left: 1.5rem;
+    }
+
+    .program-item::before {
+      content: '';
+      position: absolute;
+      left: -2.35rem;
+      top: 0.5rem;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: 2px solid var(--bg);
+    }
+
+    .program-time {
+      font-size: 0.85rem;
+      color: var(--accent);
+      font-weight: bold;
+      letter-spacing: 0.05em;
+    }
+
+    .program-name {
+      font-size: 1.1rem;
+      color: var(--primary);
+      margin: 0.2rem 0;
+    }
+
+    .program-desc {
+      font-size: 0.9rem;
+      color: var(--text-light);
+    }
+
+    .program-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      background: var(--accent-light);
+      color: var(--primary-dark);
+      padding: 0.15rem 0.6rem;
+      border-radius: 20px;
+      margin-top: 0.3rem;
+    }
+
+    /* Gift Hint */
+    .gift-card {
+      background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+      color: #fff;
+      border-radius: var(--radius);
+      padding: 2rem;
+      text-align: center;
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    .gift-icon {
+      font-size: 2.5rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .gift-card h3 {
+      font-size: 1.2rem;
+      font-weight: normal;
+      margin-bottom: 0.5rem;
+    }
+
+    .gift-card p {
+      font-size: 0.95rem;
+      opacity: 0.9;
+      line-height: 1.6;
+    }
+
+    /* Form */
+    .form-container {
+      background: var(--card-bg);
+      border-radius: var(--radius);
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+      overflow: hidden;
+    }
+
+    .form-progress {
+      display: flex;
+      background: #f5f0eb;
+      padding: 0;
+    }
+
+    .form-progress-step {
+      flex: 1;
+      text-align: center;
+      padding: 0.8rem 0.3rem;
+      font-size: 0.75rem;
+      color: var(--text-light);
+      position: relative;
+      transition: all 0.3s;
+    }
+
+    .form-progress-step.active {
+      color: var(--primary);
+      font-weight: bold;
+    }
+
+    .form-progress-step.done {
+      color: var(--success);
+    }
+
+    .form-progress-step::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0;
+      width: 100%; height: 3px;
+      background: var(--border);
+      transition: background 0.3s;
+    }
+
+    .form-progress-step.active::after { background: var(--primary); }
+    .form-progress-step.done::after { background: var(--success); }
+
+    .form-step {
+      display: none;
+      padding: 2rem;
+    }
+
+    .form-step.active { display: block; }
+
+    .form-step h3 {
+      font-size: 1.3rem;
+      color: var(--primary);
+      margin-bottom: 0.3rem;
+      font-weight: normal;
+    }
+
+    .form-step-desc {
+      color: var(--text-light);
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.2rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.9rem;
+      color: var(--text);
+      margin-bottom: 0.3rem;
+    }
+
+    .form-group label .required {
+      color: var(--error);
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+      background: #fff;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--primary-light);
+      box-shadow: 0 0 0 3px rgba(91,58,107,0.1);
+    }
+
+    .form-input.error {
+      border-color: var(--error);
+    }
+
+    .form-error {
+      color: var(--error);
+      font-size: 0.8rem;
+      margin-top: 0.2rem;
+      display: none;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+
+    @media (max-width: 480px) {
+      .form-row { grid-template-columns: 1fr; }
+    }
+
+    /* Toggle */
+    .toggle-group {
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .toggle-btn {
+      flex: 1;
+      padding: 0.8rem;
+      border: none;
+      background: #fff;
+      font-family: inherit;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      color: var(--text-light);
+    }
+
+    .toggle-btn.selected {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .toggle-btn:hover:not(.selected) {
+      background: #f5f0eb;
+    }
+
+    /* Checkbox Cards */
+    .checkbox-card {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      padding: 0.8rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin-bottom: 0.6rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      user-select: none;
+    }
+
+    .checkbox-card:hover { border-color: var(--primary-light); }
+
+    .checkbox-card.checked {
+      border-color: var(--primary);
+      background: rgba(91,58,107,0.04);
+    }
+
+    .checkbox-card input[type="checkbox"] {
+      width: 20px; height: 20px;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+
+    .checkbox-card-label {
+      font-size: 0.95rem;
+    }
+
+    .checkbox-card-desc {
+      font-size: 0.8rem;
+      color: var(--text-light);
+    }
+
+    /* Companion Card */
+    .companion-card {
+      background: #f9f6f2;
+      border-radius: 8px;
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+      border: 1px solid var(--border);
+    }
+
+    .companion-card h4 {
+      font-size: 0.95rem;
+      color: var(--primary);
+      margin-bottom: 0.8rem;
+      font-weight: normal;
+    }
+
+    .companion-remove {
+      float: right;
+      background: none;
+      border: none;
+      color: var(--error);
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-family: inherit;
+    }
+
+    /* Person Options */
+    .person-options-block {
+      background: #f9f6f2;
+      border-radius: 8px;
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+    }
+
+    .person-options-block h4 {
+      font-size: 1rem;
+      color: var(--primary);
+      margin-bottom: 0.8rem;
+      font-weight: normal;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+    }
+
+    @media (max-width: 480px) {
+      .options-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.85rem 2rem;
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-secondary {
+      background: transparent;
+      color: var(--primary);
+      border: 1px solid var(--primary);
+    }
+
+    .btn-secondary:hover { background: rgba(91,58,107,0.05); }
+
+    .form-buttons {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 2rem;
+      gap: 1rem;
+    }
+
+    .btn-add {
+      width: 100%;
+      padding: 0.7rem;
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      background: transparent;
+      color: var(--primary);
+      font-family: inherit;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-add:hover {
+      border-color: var(--primary-light);
+      background: rgba(91,58,107,0.03);
+    }
+
+    /* Summary */
+    .summary-card {
+      background: #f9f6f2;
+      border-radius: 8px;
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+    }
+
+    .summary-card h4 {
+      font-size: 0.95rem;
+      color: var(--primary);
+      margin-bottom: 0.6rem;
+    }
+
+    .summary-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.3rem 0;
+      font-size: 0.9rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .summary-item:last-child { border-bottom: none; }
+
+    .summary-label { color: var(--text-light); }
+    .summary-value { font-weight: bold; }
+
+    .summary-check {
+      color: var(--success);
+    }
+
+    /* Thank You */
+    .thankyou {
+      text-align: center;
+      padding: 3rem 2rem;
+    }
+
+    .thankyou-icon {
+      font-size: 3.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .thankyou h3 {
+      font-size: 1.5rem;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+      font-weight: normal;
+    }
+
+    .thankyou p {
+      color: var(--text-light);
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    .decline-msg {
+      text-align: center;
+      padding: 3rem 2rem;
+    }
+
+    .decline-msg h3 {
+      font-size: 1.5rem;
+      color: var(--primary);
+      margin-bottom: 0.5rem;
+      font-weight: normal;
+    }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-light);
+      font-size: 0.85rem;
+    }
+
+    /* Animations */
+    .fade-in {
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Loading spinner */
+    .spinner {
+      display: inline-block;
+      width: 20px; height: 20px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--primary-dark);
+      color: #fff;
+      padding: 0.8rem 1.5rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      z-index: 1000;
+      transition: transform 0.3s ease;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .toast.error { background: var(--error); }
+
+    /* Number input */
+    .number-control {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .number-btn {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-size: 1.3rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      color: var(--primary);
+    }
+
+    .number-btn:hover { border-color: var(--primary); background: rgba(91,58,107,0.05); }
+
+    .number-value {
+      font-size: 1.5rem;
+      min-width: 2rem;
+      text-align: center;
+      color: var(--primary);
+    }
+
+    textarea.form-input {
+      min-height: 80px;
+      resize: vertical;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Hero Section -->
+<section class="hero" id="hero">
+  <div class="slider" id="slider">
+    <div class="slide active"><img src="fotos/IMG_20200307_144303.jpg" alt="Kristin & Christian am Meer"></div>
+    <div class="slide"><img src="fotos/Katzen.PNG" alt="Unsere Katzen"></div>
+    <div class="slide"><img src="fotos/IMG_1160-3.JPEG" alt="Familienfoto"></div>
+    <div class="slide"><img src="fotos/IMG_7848.jpg" alt="Kristin & Christian im Gruenen"></div>
+  </div>
+  <div class="hero-overlay">
+    <h1 class="hero-title">Kristin &amp; Christian laden ein</h1>
+    <div class="hero-divider"></div>
+    <p class="hero-subtitle">
+      Am Samstag, den 23. Mai, feiern wir unseren gemeinsamen 90. Geburtstag
+      (40 &amp; 50 Jahre) und unseren zweiten zwölften Hochzeitstag.<br>
+      Dies möchten wir mit Euch gebührend feiern!
+    </p>
+  </div>
+  <div class="slider-dots" id="sliderDots"></div>
+</section>
+
+<!-- Welcome -->
+<section class="section" id="welcome">
+  <h2 class="section-title">Schön, dass Du da bist!</h2>
+  <div class="section-line"></div>
+  <div class="welcome-text">
+    <p>Wir freuen uns riesig, unseren Geburtstag gemeinsam mit Dir zu feiern.</p>
+    <p>Über dieses Formular kannst Du Dich ganz unkompliziert anmelden.</p>
+    <p>Für den Tag haben wir außerdem ein kleines Rahmenprogramm geplant. Damit
+    wir uns besser darauf vorbereiten können, gib bitte an, an welchen
+    Programmpunkten Du teilnehmen möchtest.</p>
+    <p>Vielen Dank – wir freuen uns auf einen unvergesslichen Tag mit Dir!</p>
+  </div>
+</section>
+
+<!-- Program -->
+<section class="section" id="programm">
+  <h2 class="section-title">Unser Programm</h2>
+  <div class="section-line"></div>
+  <div class="program-timeline">
+    <div class="program-item">
+      <div class="program-time">15:30 Uhr</div>
+      <div class="program-name">Stadtführung durch Lübeck</div>
+      <div class="program-desc">Geführter Rundgang mit Stadtführer Florenz durch die Lübecker Altstadt.</div>
+      <span class="program-badge">Anmeldung erforderlich</span>
+    </div>
+    <div class="program-item">
+      <div class="program-time">17:30 Uhr</div>
+      <div class="program-name">Besichtigung &amp; Führung Logenhaus</div>
+      <div class="program-desc">Entdeckt die beeindruckende Geschichte und Architektur des Logenhauses Lübeck.</div>
+      <span class="program-badge">Anmeldung erforderlich</span>
+    </div>
+    <div class="program-item">
+      <div class="program-time">18:15 Uhr</div>
+      <div class="program-name">Warmes &amp; kaltes Buffet</div>
+      <div class="program-desc">Gemeinsames Abendessen mit vielfältigem Buffet.</div>
+      <span class="program-badge">Für alle Gäste</span>
+    </div>
+    <div class="program-item">
+      <div class="program-time">19:30 Uhr</div>
+      <div class="program-name">Comedy-Abend</div>
+      <div class="program-desc">&bdquo;Alltagstrauma – and don't forget to smile!&ldquo; – Ein unterhaltsamer Abschluss des Abends.</div>
+      <span class="program-badge">Für alle Gäste</span>
+    </div>
+  </div>
+</section>
+
+<!-- Gift Hint -->
+<section class="section" id="geschenke">
+  <div class="gift-card">
+    <div class="gift-icon">&#127873;</div>
+    <h3>Ein Wort zu Geschenken</h3>
+    <p>Eure Anwesenheit ist uns das größte Geschenk! Wer uns dennoch eine Freude
+    machen möchte: Wir träumen von einer gemeinsamen Reise. Am Abend wird eine
+    kleine Geschenke-Box bereitstehen.</p>
+  </div>
+</section>
+
+<!-- Registration Form -->
+<section class="section" id="anmeldung">
+  <h2 class="section-title" id="formTitle">Anmeldung</h2>
+  <div class="section-line"></div>
+
+  <div class="form-container" id="formContainer">
+    <!-- Progress Bar -->
+    <div class="form-progress" id="formProgress">
+      <div class="form-progress-step active" data-step="1">1. Deine Daten</div>
+      <div class="form-progress-step" data-step="2">2. Begleitung</div>
+      <div class="form-progress-step" data-step="3">3. Programm</div>
+      <div class="form-progress-step" data-step="4">4. Überblick</div>
+    </div>
+
+    <!-- Step 1: Personal Data -->
+    <div class="form-step active" id="step1">
+      <h3>Deine Daten</h3>
+      <p class="form-step-desc">Bitte gib Deine Kontaktdaten an.</p>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Vorname <span class="required">*</span></label>
+          <input type="text" class="form-input" id="vorname" required autocomplete="given-name">
+          <div class="form-error" id="vornameError">Bitte gib Deinen Vornamen ein.</div>
+        </div>
+        <div class="form-group">
+          <label>Nachname <span class="required">*</span></label>
+          <input type="text" class="form-input" id="nachname" required autocomplete="family-name">
+          <div class="form-error" id="nachnameError">Bitte gib Deinen Nachnamen ein.</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>E-Mail <span class="required">*</span></label>
+        <input type="email" class="form-input" id="email" required autocomplete="email">
+        <div class="form-error" id="emailError">Bitte gib eine gültige E-Mail-Adresse ein.</div>
+      </div>
+
+      <div class="form-group">
+        <label>Telefon <span style="color:var(--text-light)">(optional)</span></label>
+        <input type="tel" class="form-input" id="telefon" autocomplete="tel">
+      </div>
+
+      <div class="form-group">
+        <label>Nimmst Du teil? <span class="required">*</span></label>
+        <div class="toggle-group" id="teilnahmeToggle">
+          <button type="button" class="toggle-btn selected" data-value="true">Ja, ich bin dabei!</button>
+          <button type="button" class="toggle-btn" data-value="false">Leider nicht</button>
+        </div>
+      </div>
+
+      <div class="form-buttons">
+        <span></span>
+        <button type="button" class="btn btn-primary" onclick="nextStep(1)">Weiter</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Companions -->
+    <div class="form-step" id="step2">
+      <h3>Begleitung</h3>
+      <p class="form-step-desc">Bringst Du jemanden mit?</p>
+
+      <div class="form-group">
+        <label>Anzahl Begleitpersonen</label>
+        <div class="number-control">
+          <button type="button" class="number-btn" onclick="changeCompanions(-1)">&#8722;</button>
+          <span class="number-value" id="companionCount">0</span>
+          <button type="button" class="number-btn" onclick="changeCompanions(1)">+</button>
+        </div>
+      </div>
+
+      <div id="companionFields"></div>
+
+      <div class="form-buttons">
+        <button type="button" class="btn btn-secondary" onclick="prevStep(2)">Zurück</button>
+        <button type="button" class="btn btn-primary" onclick="nextStep(2)">Weiter</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Program & Food Preferences -->
+    <div class="form-step" id="step3">
+      <h3>Programm &amp; Essenswünsche</h3>
+      <p class="form-step-desc">Bitte wähle für alle Teilnehmenden aus.</p>
+
+      <div id="personOptions"></div>
+
+      <div class="form-buttons">
+        <button type="button" class="btn btn-secondary" onclick="prevStep(3)">Zurück</button>
+        <button type="button" class="btn btn-primary" onclick="nextStep(3)">Weiter</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Summary -->
+    <div class="form-step" id="step4">
+      <h3>Zusammenfassung</h3>
+      <p class="form-step-desc">Bitte überprüfe Deine Angaben.</p>
+
+      <div id="summaryContent"></div>
+
+      <div class="form-group">
+        <label>Bemerkungen <span style="color:var(--text-light)">(optional)</span></label>
+        <textarea class="form-input" id="bemerkungen" placeholder="Allergien, Wünsche oder Grüße..."></textarea>
+      </div>
+
+      <div class="form-buttons">
+        <button type="button" class="btn btn-secondary" onclick="prevStep(4)">Zurück</button>
+        <button type="button" class="btn btn-primary" id="submitBtn" onclick="submitForm()">Anmeldung absenden</button>
+      </div>
+    </div>
+
+    <!-- Thank You -->
+    <div class="form-step" id="stepThankYou">
+      <div class="thankyou fade-in">
+        <div class="thankyou-icon">&#127881;</div>
+        <h3>Vielen Dank für Deine Anmeldung!</h3>
+        <p>Du erhältst in Kürze eine Bestätigungs-E-Mail mit einem Link,
+        über den Du Deine Angaben jederzeit ändern kannst.</p>
+        <p style="margin-top:1rem; color: var(--accent);">Wir freuen uns auf Dich!</p>
+      </div>
+    </div>
+
+    <!-- Decline -->
+    <div class="form-step" id="stepDecline">
+      <div class="decline-msg fade-in">
+        <div class="thankyou-icon">&#128532;</div>
+        <h3>Schade, dass Du nicht dabei sein kannst!</h3>
+        <p>Wir haben Deine Absage notiert. Falls sich Deine Pläne ändern,
+        kannst Du Dich jederzeit über den Link in Deiner Bestätigungs-E-Mail ummelden.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="footer">
+  &copy; 2026 Kristin &amp; Christian Szonn
+</footer>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ===== CONFIG =====
+  const SUPABASE_URL = 'https://supabase.hanse-ai.de';
+  const SUPABASE_ANON_KEY = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJzdXBhYmFzZSIsImlhdCI6MTc3MDIwNzEyMCwiZXhwIjo0OTI1ODgwNzIwLCJyb2xlIjoiYW5vbiJ9.kFTGEvecmzofxff-z5SvOvXQgOEdl__epv5jHd6QXMU';
+  const N8N_WEBHOOK_URL = 'https://n8n.hanse-ai.de/webhook/ck-anmeldung-bestaetigung';
+
+  // ===== SLIDER =====
+  const slides = document.querySelectorAll('.slide');
+  const dotsContainer = document.getElementById('sliderDots');
+  let currentSlide = 0;
+  let slideInterval;
+
+  slides.forEach((_, i) => {
+    const dot = document.createElement('button');
+    dot.className = 'slider-dot' + (i === 0 ? ' active' : '');
+    dot.onclick = () => goToSlide(i);
+    dotsContainer.appendChild(dot);
+  });
+
+  function goToSlide(n) {
+    slides[currentSlide].classList.remove('active');
+    dotsContainer.children[currentSlide].classList.remove('active');
+    currentSlide = n;
+    slides[currentSlide].classList.add('active');
+    dotsContainer.children[currentSlide].classList.add('active');
+  }
+
+  function nextSlide() {
+    goToSlide((currentSlide + 1) % slides.length);
+  }
+
+  function startSlider() {
+    slideInterval = setInterval(nextSlide, 5000);
+  }
+
+  startSlider();
+
+  // Touch swipe
+  let touchStartX = 0;
+  const slider = document.getElementById('slider');
+  slider.addEventListener('touchstart', e => {
+    touchStartX = e.touches[0].clientX;
+    clearInterval(slideInterval);
+  }, { passive: true });
+  slider.addEventListener('touchend', e => {
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) goToSlide((currentSlide + 1) % slides.length);
+      else goToSlide((currentSlide - 1 + slides.length) % slides.length);
+    }
+    startSlider();
+  }, { passive: true });
+
+  // ===== FORM STATE =====
+  let nimmt_teil = true;
+  let companionCount = 0;
+  let editMode = false;
+  let editToken = null;
+  let existingAnmeldungId = null;
+
+  // Toggle buttons
+  document.getElementById('teilnahmeToggle').addEventListener('click', e => {
+    const btn = e.target.closest('.toggle-btn');
+    if (!btn) return;
+    document.querySelectorAll('#teilnahmeToggle .toggle-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    nimmt_teil = btn.dataset.value === 'true';
+  });
+
+  // ===== COMPANIONS =====
+  function changeCompanions(delta) {
+    const newCount = Math.max(0, companionCount + delta);
+    companionCount = newCount;
+    document.getElementById('companionCount').textContent = newCount;
+    renderCompanionFields();
+  }
+
+  function renderCompanionFields() {
+    const container = document.getElementById('companionFields');
+    container.innerHTML = '';
+    for (let i = 0; i < companionCount; i++) {
+      const card = document.createElement('div');
+      card.className = 'companion-card fade-in';
+      card.innerHTML = `
+        <button type="button" class="companion-remove" onclick="removeCompanion(${i})">Entfernen</button>
+        <h4>Begleitperson ${i + 1}</h4>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Vorname <span class="required">*</span></label>
+            <input type="text" class="form-input companion-vorname" data-index="${i}" value="${getCompanionValue(i, 'vorname')}">
+          </div>
+          <div class="form-group">
+            <label>Nachname <span class="required">*</span></label>
+            <input type="text" class="form-input companion-nachname" data-index="${i}" value="${getCompanionValue(i, 'nachname')}">
+          </div>
+        </div>
+      `;
+      container.appendChild(card);
+    }
+  }
+
+  let savedCompanions = [];
+  function getCompanionValue(index, field) {
+    if (savedCompanions[index] && savedCompanions[index][field]) {
+      return savedCompanions[index][field];
+    }
+    return '';
+  }
+
+  function saveCompanionValues() {
+    savedCompanions = [];
+    for (let i = 0; i < companionCount; i++) {
+      const vEl = document.querySelector(`.companion-vorname[data-index="${i}"]`);
+      const nEl = document.querySelector(`.companion-nachname[data-index="${i}"]`);
+      savedCompanions[i] = {
+        vorname: vEl ? vEl.value : '',
+        nachname: nEl ? nEl.value : ''
+      };
+    }
+  }
+
+  function removeCompanion(index) {
+    saveCompanionValues();
+    savedCompanions.splice(index, 1);
+    companionCount--;
+    document.getElementById('companionCount').textContent = companionCount;
+    renderCompanionFields();
+  }
+
+  // ===== PERSON OPTIONS (Step 3) =====
+  function renderPersonOptions() {
+    const container = document.getElementById('personOptions');
+    container.innerHTML = '';
+
+    const vorname = document.getElementById('vorname').value || 'Du';
+    const nachname = document.getElementById('nachname').value || '';
+
+    // Main guest
+    container.appendChild(createPersonOptionsBlock(
+      `${vorname} ${nachname}`.trim(),
+      'main', true
+    ));
+
+    // Companions
+    for (let i = 0; i < companionCount; i++) {
+      const cv = document.querySelector(`.companion-vorname[data-index="${i}"]`);
+      const cn = document.querySelector(`.companion-nachname[data-index="${i}"]`);
+      const name = ((cv ? cv.value : '') + ' ' + (cn ? cn.value : '')).trim() || `Begleitung ${i+1}`;
+      container.appendChild(createPersonOptionsBlock(name, `comp_${i}`, false));
+    }
+  }
+
+  function createPersonOptionsBlock(name, prefix, isMain) {
+    const block = document.createElement('div');
+    block.className = 'person-options-block fade-in';
+    block.innerHTML = `
+      <h4>${escapeHtml(name)}</h4>
+      <div class="options-grid">
+        <label class="checkbox-card" onclick="toggleCard(this)">
+          <input type="checkbox" id="${prefix}_stadtfuehrung">
+          <div>
+            <div class="checkbox-card-label">Stadtführung</div>
+            <div class="checkbox-card-desc">15:30 Uhr</div>
+          </div>
+        </label>
+        <label class="checkbox-card" onclick="toggleCard(this)">
+          <input type="checkbox" id="${prefix}_logenhaus">
+          <div>
+            <div class="checkbox-card-label">Logenhausführung</div>
+            <div class="checkbox-card-desc">17:30 Uhr</div>
+          </div>
+        </label>
+        <label class="checkbox-card" onclick="toggleCard(this)">
+          <input type="checkbox" id="${prefix}_vegan">
+          <div>
+            <div class="checkbox-card-label">Veganes Essen</div>
+            <div class="checkbox-card-desc">Buffet</div>
+          </div>
+        </label>
+        <label class="checkbox-card" onclick="toggleCard(this)">
+          <input type="checkbox" id="${prefix}_glutenfrei">
+          <div>
+            <div class="checkbox-card-label">Glutenfrei</div>
+            <div class="checkbox-card-desc">Buffet</div>
+          </div>
+        </label>
+      </div>
+    `;
+    return block;
+  }
+
+  function toggleCard(el) {
+    const cb = el.querySelector('input[type="checkbox"]');
+    // The label click already toggles the checkbox, so we just update the class
+    setTimeout(() => {
+      el.classList.toggle('checked', cb.checked);
+    }, 0);
+  }
+
+  // ===== SUMMARY (Step 4) =====
+  function renderSummary() {
+    const container = document.getElementById('summaryContent');
+    container.innerHTML = '';
+
+    const vorname = document.getElementById('vorname').value;
+    const nachname = document.getElementById('nachname').value;
+    const email = document.getElementById('email').value;
+
+    // Main guest summary
+    let html = `<div class="summary-card">
+      <h4>${escapeHtml(vorname)} ${escapeHtml(nachname)}</h4>
+      <div class="summary-item"><span class="summary-label">E-Mail</span><span class="summary-value">${escapeHtml(email)}</span></div>`;
+
+    const mainOpts = getPersonOptions('main');
+    if (mainOpts.stadtfuehrung) html += `<div class="summary-item"><span class="summary-label">Stadtführung</span><span class="summary-check">&#10003;</span></div>`;
+    if (mainOpts.logenhaus) html += `<div class="summary-item"><span class="summary-label">Logenhausführung</span><span class="summary-check">&#10003;</span></div>`;
+    if (mainOpts.vegan) html += `<div class="summary-item"><span class="summary-label">Vegan</span><span class="summary-check">&#10003;</span></div>`;
+    if (mainOpts.glutenfrei) html += `<div class="summary-item"><span class="summary-label">Glutenfrei</span><span class="summary-check">&#10003;</span></div>`;
+
+    html += `</div>`;
+
+    // Companion summaries
+    for (let i = 0; i < companionCount; i++) {
+      const cv = document.querySelector(`.companion-vorname[data-index="${i}"]`);
+      const cn = document.querySelector(`.companion-nachname[data-index="${i}"]`);
+      const compName = ((cv ? cv.value : '') + ' ' + (cn ? cn.value : '')).trim() || `Begleitung ${i+1}`;
+      const opts = getPersonOptions(`comp_${i}`);
+
+      html += `<div class="summary-card"><h4>${escapeHtml(compName)}</h4>`;
+      if (opts.stadtfuehrung) html += `<div class="summary-item"><span class="summary-label">Stadtführung</span><span class="summary-check">&#10003;</span></div>`;
+      if (opts.logenhaus) html += `<div class="summary-item"><span class="summary-label">Logenhausführung</span><span class="summary-check">&#10003;</span></div>`;
+      if (opts.vegan) html += `<div class="summary-item"><span class="summary-label">Vegan</span><span class="summary-check">&#10003;</span></div>`;
+      if (opts.glutenfrei) html += `<div class="summary-item"><span class="summary-label">Glutenfrei</span><span class="summary-check">&#10003;</span></div>`;
+      html += `</div>`;
+    }
+
+    container.innerHTML = html;
+  }
+
+  function getPersonOptions(prefix) {
+    return {
+      stadtfuehrung: document.getElementById(`${prefix}_stadtfuehrung`)?.checked || false,
+      logenhaus: document.getElementById(`${prefix}_logenhaus`)?.checked || false,
+      vegan: document.getElementById(`${prefix}_vegan`)?.checked || false,
+      glutenfrei: document.getElementById(`${prefix}_glutenfrei`)?.checked || false,
+    };
+  }
+
+  // ===== NAVIGATION =====
+  function showStep(n) {
+    document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+    document.getElementById(`step${n}`).classList.add('active');
+    document.querySelectorAll('.form-progress-step').forEach((s, i) => {
+      s.classList.remove('active', 'done');
+      if (i + 1 === n) s.classList.add('active');
+      else if (i + 1 < n) s.classList.add('done');
+    });
+  }
+
+  function nextStep(current) {
+    if (current === 1) {
+      if (!validateStep1()) return;
+      if (!nimmt_teil) {
+        submitDecline();
+        return;
+      }
+    }
+    if (current === 2) {
+      saveCompanionValues();
+      if (!validateStep2()) return;
+      renderPersonOptions();
+      // Restore checked states if going back and forth
+    }
+    if (current === 3) {
+      renderSummary();
+    }
+    showStep(current + 1);
+  }
+
+  function prevStep(current) {
+    if (current === 3) saveCompanionValues();
+    showStep(current - 1);
+  }
+
+  function validateStep1() {
+    let valid = true;
+    ['vorname', 'nachname', 'email'].forEach(id => {
+      const el = document.getElementById(id);
+      const errEl = document.getElementById(id + 'Error');
+      if (!el.value.trim() || (id === 'email' && !el.value.includes('@'))) {
+        el.classList.add('error');
+        if (errEl) errEl.style.display = 'block';
+        valid = false;
+      } else {
+        el.classList.remove('error');
+        if (errEl) errEl.style.display = 'none';
+      }
+    });
+    return valid;
+  }
+
+  function validateStep2() {
+    for (let i = 0; i < companionCount; i++) {
+      const v = document.querySelector(`.companion-vorname[data-index="${i}"]`);
+      const n = document.querySelector(`.companion-nachname[data-index="${i}"]`);
+      if (!v.value.trim() || !n.value.trim()) {
+        showToast('Bitte fülle alle Namen der Begleitpersonen aus.', true);
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // ===== SUBMIT =====
+  async function submitDecline() {
+    const btn = document.querySelector('#step1 .btn-primary');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>';
+
+    try {
+      const data = {
+        vorname: document.getElementById('vorname').value.trim(),
+        nachname: document.getElementById('nachname').value.trim(),
+        email: document.getElementById('email').value.trim().toLowerCase(),
+        telefon: document.getElementById('telefon').value.trim() || null,
+        nimmt_teil: false,
+      };
+
+      if (editMode && existingAnmeldungId) {
+        data.updated_at = new Date().toISOString();
+        await supabaseRequest('PATCH', `/rest/v1/ck_anmeldungen?id=eq.${existingAnmeldungId}`, data, editToken);
+      } else {
+        await supabaseRequest('POST', '/rest/v1/ck_anmeldungen', data);
+      }
+
+      // Trigger n8n webhook
+      triggerWebhook({ ...data, edit_token: editToken });
+
+      document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+      document.getElementById('stepDecline').classList.add('active');
+      document.getElementById('formProgress').style.display = 'none';
+    } catch (err) {
+      showToast('Fehler: ' + err.message, true);
+      btn.disabled = false;
+      btn.textContent = 'Weiter';
+    }
+  }
+
+  async function submitForm() {
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Wird gesendet...';
+
+    try {
+      const mainOpts = getPersonOptions('main');
+      const anmeldung = {
+        vorname: document.getElementById('vorname').value.trim(),
+        nachname: document.getElementById('nachname').value.trim(),
+        email: document.getElementById('email').value.trim().toLowerCase(),
+        telefon: document.getElementById('telefon').value.trim() || null,
+        nimmt_teil: true,
+        vegan: mainOpts.vegan,
+        glutenfrei: mainOpts.glutenfrei,
+        stadtfuehrung: mainOpts.stadtfuehrung,
+        logenhaus_tour: mainOpts.logenhaus,
+        anzahl_begleitung: companionCount,
+        bemerkungen: document.getElementById('bemerkungen').value.trim() || null,
+      };
+
+      let anmeldungId, returnedEditToken;
+
+      if (editMode && existingAnmeldungId) {
+        anmeldung.updated_at = new Date().toISOString();
+        const result = await supabaseRequest('PATCH', `/rest/v1/ck_anmeldungen?id=eq.${existingAnmeldungId}`, anmeldung, editToken, true);
+        anmeldungId = existingAnmeldungId;
+        returnedEditToken = editToken;
+
+        // Delete old companions and re-insert
+        await supabaseRequest('DELETE', `/rest/v1/ck_begleitpersonen?anmeldung_id=eq.${existingAnmeldungId}`, null, editToken);
+      } else {
+        const result = await supabaseRequest('POST', '/rest/v1/ck_anmeldungen', anmeldung, null, true);
+        anmeldungId = result[0].id;
+        returnedEditToken = result[0].edit_token;
+      }
+
+      // Insert companions
+      for (let i = 0; i < companionCount; i++) {
+        const opts = getPersonOptions(`comp_${i}`);
+        const companion = {
+          anmeldung_id: anmeldungId,
+          vorname: savedCompanions[i]?.vorname || document.querySelector(`.companion-vorname[data-index="${i}"]`)?.value?.trim() || '',
+          nachname: savedCompanions[i]?.nachname || document.querySelector(`.companion-nachname[data-index="${i}"]`)?.value?.trim() || '',
+          vegan: opts.vegan,
+          glutenfrei: opts.glutenfrei,
+          stadtfuehrung: opts.stadtfuehrung,
+          logenhaus_tour: opts.logenhaus,
+        };
+        await supabaseRequest('POST', '/rest/v1/ck_begleitpersonen', companion);
+      }
+
+      // Trigger n8n webhook
+      const programmDetails = [];
+      if (mainOpts.stadtfuehrung) programmDetails.push('Stadtführung');
+      if (mainOpts.logenhaus) programmDetails.push('Logenhausführung');
+      triggerWebhook({
+        email: anmeldung.email,
+        vorname: anmeldung.vorname,
+        nachname: anmeldung.nachname,
+        nimmt_teil: true,
+        edit_token: returnedEditToken,
+        programm_details: programmDetails.join(', '),
+        anzahl_begleitung: companionCount,
+      });
+
+      // Show thank you
+      document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
+      document.getElementById('stepThankYou').classList.add('active');
+      document.getElementById('formProgress').style.display = 'none';
+
+    } catch (err) {
+      showToast('Fehler: ' + err.message, true);
+      btn.disabled = false;
+      btn.textContent = 'Anmeldung absenden';
+    }
+  }
+
+  // ===== SUPABASE HELPER =====
+  async function supabaseRequest(method, path, body, token, returnData) {
+    const headers = {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json',
+    };
+    if (returnData) headers['Prefer'] = 'return=representation';
+    if (token) headers['x-edit-token'] = token;
+
+    const opts = { method, headers };
+    if (body && method !== 'DELETE') opts.body = JSON.stringify(body);
+
+    const resp = await fetch(SUPABASE_URL + path, opts);
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.message || err.msg || `HTTP ${resp.status}`);
+    }
+    if (returnData) return resp.json();
+    return null;
+  }
+
+  async function triggerWebhook(data) {
+    try {
+      await fetch(N8N_WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+    } catch (e) {
+      console.warn('Webhook-Aufruf fehlgeschlagen:', e);
+    }
+  }
+
+  // ===== EDIT MODE =====
+  async function checkEditMode() {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('edit');
+    if (!token) return;
+
+    editMode = true;
+    editToken = token;
+    document.getElementById('formTitle').textContent = 'Anmeldung bearbeiten';
+
+    try {
+      // Fetch existing data
+      const headers = {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'x-edit-token': token,
+      };
+
+      const resp = await fetch(`${SUPABASE_URL}/rest/v1/ck_anmeldungen?select=*&edit_token=eq.${token}`, { headers });
+      if (!resp.ok) throw new Error('Anmeldung nicht gefunden');
+      const data = await resp.json();
+      if (!data.length) throw new Error('Anmeldung nicht gefunden');
+
+      const a = data[0];
+      existingAnmeldungId = a.id;
+
+      // Fill form
+      document.getElementById('vorname').value = a.vorname || '';
+      document.getElementById('nachname').value = a.nachname || '';
+      document.getElementById('email').value = a.email || '';
+      document.getElementById('telefon').value = a.telefon || '';
+      nimmt_teil = a.nimmt_teil;
+
+      // Update toggle
+      document.querySelectorAll('#teilnahmeToggle .toggle-btn').forEach(btn => {
+        btn.classList.toggle('selected', btn.dataset.value === String(a.nimmt_teil));
+      });
+
+      // Load companions
+      const compResp = await fetch(`${SUPABASE_URL}/rest/v1/ck_begleitpersonen?anmeldung_id=eq.${a.id}&select=*`, { headers });
+      const companions = await compResp.json();
+
+      if (companions.length > 0) {
+        companionCount = companions.length;
+        document.getElementById('companionCount').textContent = companionCount;
+        savedCompanions = companions.map(c => ({
+          vorname: c.vorname,
+          nachname: c.nachname,
+          vegan: c.vegan,
+          glutenfrei: c.glutenfrei,
+          stadtfuehrung: c.stadtfuehrung,
+          logenhaus_tour: c.logenhaus_tour,
+        }));
+        renderCompanionFields();
+      }
+
+      // Store main guest options to restore in step 3
+      window._editMainOpts = {
+        stadtfuehrung: a.stadtfuehrung,
+        logenhaus: a.logenhaus_tour,
+        vegan: a.vegan,
+        glutenfrei: a.glutenfrei,
+      };
+      window._editCompOpts = savedCompanions;
+
+      showToast('Deine bestehende Anmeldung wurde geladen.');
+
+      // Scroll to form
+      setTimeout(() => {
+        document.getElementById('anmeldung').scrollIntoView({ behavior: 'smooth' });
+      }, 500);
+
+    } catch (err) {
+      showToast('Anmeldung konnte nicht geladen werden: ' + err.message, true);
+    }
+  }
+
+  // Override renderPersonOptions to restore edit values
+  const _origRenderPersonOptions = renderPersonOptions;
+  renderPersonOptions = function() {
+    _origRenderPersonOptions();
+    // Restore edit mode checkboxes
+    if (window._editMainOpts) {
+      const o = window._editMainOpts;
+      setCheckbox('main_stadtfuehrung', o.stadtfuehrung);
+      setCheckbox('main_logenhaus', o.logenhaus);
+      setCheckbox('main_vegan', o.vegan);
+      setCheckbox('main_glutenfrei', o.glutenfrei);
+      window._editMainOpts = null; // Only restore once
+    }
+    if (window._editCompOpts) {
+      window._editCompOpts.forEach((c, i) => {
+        setCheckbox(`comp_${i}_stadtfuehrung`, c.stadtfuehrung);
+        setCheckbox(`comp_${i}_logenhaus`, c.logenhaus_tour);
+        setCheckbox(`comp_${i}_vegan`, c.vegan);
+        setCheckbox(`comp_${i}_glutenfrei`, c.glutenfrei);
+      });
+      window._editCompOpts = null;
+    }
+  };
+
+  function setCheckbox(id, value) {
+    const el = document.getElementById(id);
+    if (el) {
+      el.checked = !!value;
+      const card = el.closest('.checkbox-card');
+      if (card) card.classList.toggle('checked', !!value);
+    }
+  }
+
+  // ===== UTILITIES =====
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function showToast(msg, isError) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.className = 'toast' + (isError ? ' error' : '') + ' show';
+    setTimeout(() => toast.classList.remove('show'), 4000);
+  }
+
+  // ===== INIT =====
+  checkEditMode();
+
+  // Service Worker registration
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+</script>
+
+</body>
+</html>

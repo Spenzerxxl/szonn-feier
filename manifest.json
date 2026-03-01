@@ -1,0 +1,21 @@
+{
+  "name": "Kristin & Christian laden ein",
+  "short_name": "CK-Feier",
+  "description": "Einladung zum gemeinsamen 90. Geburtstag am 23. Mai 2026",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#faf8f5",
+  "theme_color": "#5b3a6b",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
