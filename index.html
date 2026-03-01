@@ -66,10 +66,17 @@
       object-fit: cover;
     }
 
-    /* Per-Bild Positionierung: Motive (Köpfe/Katzen) sichtbar halten */
-    .slide:nth-child(1) img { object-position: center center; }
-    .slide:nth-child(2) img { object-position: center 25%; }
-    .slide:nth-child(3) img { object-position: center 45%; }
+    /* Per-Bild Positionierung (via Positionierungs-Tool Ctrl+Shift+P ermittelt) */
+    .slide:nth-child(1) img { display: none; }
+    .slide:nth-child(1) {
+      background-image: url(fotos/IMG_20200307_144303.jpg);
+      background-size: 60.4vw auto;
+      background-position: 59% 66%;
+      background-repeat: no-repeat;
+      background-color: #2c3e50;
+    }
+    .slide:nth-child(2) img { object-position: 50% 20%; }
+    .slide:nth-child(3) img { object-position: 50% 53%; }
     .slide:nth-child(4) img { object-fit: contain; background-color: #2c3e50; }
 
     .hero-overlay {
@@ -1585,6 +1592,69 @@
   let resizeStartDist, resizeStartScale;
   let savedSlideState = null;   // Originalzustand vor dem Tool (für Abbrechen)
 
+  // ── localStorage: Positionen speichern / laden / löschen ───
+  const LS_KEY = 'slider-positions';
+
+  function savePositionToStorage(fileName, result) {
+    const stored = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+    if (result.fit === 'cover') {
+      stored[fileName] = {
+        mode: 'cover',
+        objectFit: 'cover',
+        objectPosition: `${result.x}% ${result.y}%`
+      };
+    } else {
+      stored[fileName] = {
+        mode: 'background-image',
+        backgroundSize: `${result.scaledW}px ${result.scaledH}px`,
+        backgroundPosition: `${result.x}% ${result.y}%`,
+        backgroundColor: ELEGANT_BG_COLOR
+      };
+    }
+    localStorage.setItem(LS_KEY, JSON.stringify(stored));
+    console.log('[ImgPosTool] Saved to localStorage:', fileName, stored[fileName]);
+  }
+
+  function removePositionFromStorage(fileName) {
+    const stored = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+    delete stored[fileName];
+    if (Object.keys(stored).length === 0) {
+      localStorage.removeItem(LS_KEY);
+    } else {
+      localStorage.setItem(LS_KEY, JSON.stringify(stored));
+    }
+    console.log('[ImgPosTool] Removed from localStorage:', fileName);
+  }
+
+  function applyStoredPositions() {
+    const stored = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+    if (Object.keys(stored).length === 0) return;
+
+    document.querySelectorAll('.slide img').forEach(function(img) {
+      const fileName = img.src.split('/').pop();
+      const s = stored[fileName];
+      if (!s) return;
+
+      const slide = img.closest('.slide');
+      if (s.mode === 'cover') {
+        img.style.objectFit = s.objectFit;
+        img.style.objectPosition = s.objectPosition;
+      } else {
+        // background-image Modus
+        img.style.display = 'none';
+        slide.style.backgroundImage = 'url(' + img.src + ')';
+        slide.style.backgroundSize = s.backgroundSize;
+        slide.style.backgroundPosition = s.backgroundPosition;
+        slide.style.backgroundRepeat = 'no-repeat';
+        slide.style.backgroundColor = s.backgroundColor;
+      }
+    });
+    console.log('[ImgPosTool] Applied stored positions from localStorage:', Object.keys(stored));
+  }
+
+  // Gespeicherte Positionen beim Laden anwenden
+  applyStoredPositions();
+
   // ── Aktivierung per Tastenkombination ──────────────────────
   document.addEventListener('keydown', function(e) {
     if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === ACTIVATION_KEY) {
@@ -2206,6 +2276,11 @@
 
     // savedSlideState nullen → Abbrechen macht Speicherung nicht rückgängig
     savedSlideState = null;
+
+    // In localStorage speichern (überlebt Ctrl+Shift+R)
+    const fileName = targetImg.src.split('/').pop();
+    savePositionToStorage(fileName, result);
+
     console.log('[ImgPosTool] Applied:', result);
   }
 
@@ -2242,6 +2317,12 @@
 
   // ── Reset auf center center ────────────────────────────────
   function resetPosition() {
+    // localStorage-Eintrag für dieses Bild löschen
+    if (targetImg) {
+      const fileName = targetImg.src.split('/').pop();
+      removePositionFromStorage(fileName);
+    }
+
     const scaleX = vpW / naturalW;
     const scaleY = vpH / naturalH;
     imgScale = Math.max(scaleX, scaleY);
