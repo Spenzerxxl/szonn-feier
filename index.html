@@ -1550,5 +1550,577 @@
   }
 </script>
 
+<!-- ============================================================
+     VISUELLES BILD-POSITIONIERUNGS-TOOL (Dev-Tool)
+     Aktivierung: Ctrl+Shift+P auf der Live-Seite
+     Funktioniert mit jedem Element das object-fit: cover nutzt.
+     Eigenständiger Block — kann in andere Projekte kopiert werden.
+     ============================================================ -->
+<script>
+(function() {
+  'use strict';
+
+  // ── Konfiguration ──────────────────────────────────────────
+  const ACTIVATION_KEY = 'P'; // Ctrl+Shift+P
+  const OVERLAY_Z = 99999;
+
+  // ── State ──────────────────────────────────────────────────
+  let overlayEl = null;
+  let isOpen = false;
+  let targetImg = null;        // das <img> im Slider
+  let naturalW = 0, naturalH = 0;
+  let vpW = 0, vpH = 0;       // Viewport (Slider-Ausschnitt)
+  let imgScale = 1;            // aktuelle Skalierung
+  let imgX = 0, imgY = 0;     // Offset des Bildes relativ zum Viewport
+  let dragging = false;
+  let resizing = false;
+  let dragStartX, dragStartY, dragStartImgX, dragStartImgY;
+  let resizeStartDist, resizeStartScale;
+
+  // ── Aktivierung per Tastenkombination ──────────────────────
+  document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.shiftKey && e.key.toUpperCase() === ACTIVATION_KEY) {
+      e.preventDefault();
+      if (isOpen) { closeOverlay(); return; }
+      openOverlay();
+    }
+    if (e.key === 'Escape' && isOpen) {
+      e.preventDefault();
+      closeOverlay();
+    }
+  });
+
+  // ── Aktuelles Slider-Bild finden ───────────────────────────
+  function getActiveSlideImg() {
+    const activeSlide = document.querySelector('.slide.active');
+    if (!activeSlide) return null;
+    return activeSlide.querySelector('img');
+  }
+
+  // ── Overlay öffnen ─────────────────────────────────────────
+  function openOverlay() {
+    targetImg = getActiveSlideImg();
+    if (!targetImg) return;
+
+    // Slider-Autoplay stoppen
+    if (typeof clearInterval !== 'undefined' && typeof slideInterval !== 'undefined') {
+      clearInterval(slideInterval);
+    }
+
+    // Viewport-Größe = Slider-Bereich
+    const heroEl = document.querySelector('.hero');
+    vpW = heroEl.offsetWidth;
+    vpH = heroEl.offsetHeight;
+
+    // Natürliche Bildgröße
+    naturalW = targetImg.naturalWidth;
+    naturalH = targetImg.naturalHeight;
+
+    // Aktuelle object-position parsen
+    const computed = getComputedStyle(targetImg);
+    const objPos = computed.objectPosition || 'center center';
+
+    // Anfangs-Skalierung berechnen: cover-Logik
+    const scaleX = vpW / naturalW;
+    const scaleY = vpH / naturalH;
+    imgScale = Math.max(scaleX, scaleY);
+
+    // Anfangs-Position aus object-position berechnen
+    const parsed = parseObjectPosition(objPos);
+    const scaledW = naturalW * imgScale;
+    const scaledH = naturalH * imgScale;
+    imgX = -(parsed.x / 100) * (scaledW - vpW);
+    imgY = -(parsed.y / 100) * (scaledH - vpH);
+
+    buildOverlayDOM();
+    isOpen = true;
+    updatePreview();
+  }
+
+  // ── object-position String parsen → {x: %, y: %} ──────────
+  function parseObjectPosition(str) {
+    const parts = str.trim().split(/\s+/);
+    return {
+      x: parseSingleValue(parts[0] || 'center'),
+      y: parseSingleValue(parts[1] || 'center')
+    };
+  }
+
+  function parseSingleValue(val) {
+    if (val === 'left' || val === 'top') return 0;
+    if (val === 'center') return 50;
+    if (val === 'right' || val === 'bottom') return 100;
+    return parseFloat(val) || 50;
+  }
+
+  // ── Position → object-position %-Werte ─────────────────────
+  function calcObjectPosition() {
+    const scaledW = naturalW * imgScale;
+    const scaledH = naturalH * imgScale;
+    const maxOffsetX = scaledW - vpW;
+    const maxOffsetY = scaledH - vpH;
+    const px = maxOffsetX > 0 ? Math.round((-imgX / maxOffsetX) * 100) : 50;
+    const py = maxOffsetY > 0 ? Math.round((-imgY / maxOffsetY) * 100) : 50;
+    return {
+      x: Math.max(0, Math.min(100, px)),
+      y: Math.max(0, Math.min(100, py))
+    };
+  }
+
+  // ── Overlay DOM aufbauen ───────────────────────────────────
+  function buildOverlayDOM() {
+    overlayEl = document.createElement('div');
+    overlayEl.id = 'imgPosTool';
+    overlayEl.innerHTML = `
+      <style>
+        #imgPosTool {
+          position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+          background: rgba(0,0,0,0.85); z-index: ${OVERLAY_Z};
+          display: flex; flex-direction: column; align-items: center;
+          justify-content: center; font-family: monospace; color: #fff;
+          user-select: none; -webkit-user-select: none;
+        }
+        #imgPosTool * { box-sizing: border-box; }
+        #ipt-workspace {
+          position: relative; overflow: visible;
+          border: 2px solid rgba(255,255,255,0.3);
+          cursor: grab; background: repeating-conic-gradient(
+            #222 0% 25%, #333 0% 50%) 50% / 20px 20px;
+        }
+        #ipt-workspace.dragging { cursor: grabbing; }
+        #ipt-img {
+          position: absolute; top: 0; left: 0;
+          transform-origin: 0 0; pointer-events: none;
+          image-rendering: auto;
+        }
+        /* Viewport-Rahmen (blau) */
+        #ipt-viewport-frame {
+          position: absolute; top: 0; left: 0;
+          border: 2px dashed rgba(59,130,246,0.8);
+          pointer-events: none;
+        }
+        /* Bild-Mittelpunkt (rot) */
+        .ipt-crosshair-img {
+          position: absolute; pointer-events: none; z-index: 2;
+        }
+        .ipt-crosshair-img::before, .ipt-crosshair-img::after {
+          content: ''; position: absolute; background: rgba(239,68,68,0.7);
+        }
+        .ipt-crosshair-img::before {
+          width: 1px; height: 24px; left: 50%; top: 50%;
+          transform: translate(-50%, -50%);
+        }
+        .ipt-crosshair-img::after {
+          width: 24px; height: 1px; left: 50%; top: 50%;
+          transform: translate(-50%, -50%);
+        }
+        .ipt-dot-img {
+          position: absolute; width: 8px; height: 8px; border-radius: 50%;
+          background: rgba(239,68,68,0.9); pointer-events: none; z-index: 2;
+          transform: translate(-50%, -50%);
+        }
+        /* Viewport-Mittelpunkt (blau) */
+        .ipt-crosshair-vp {
+          position: absolute; pointer-events: none; z-index: 3;
+        }
+        .ipt-crosshair-vp::before, .ipt-crosshair-vp::after {
+          content: ''; position: absolute; background: rgba(59,130,246,0.7);
+        }
+        .ipt-crosshair-vp::before {
+          width: 1px; height: 30px; left: 50%; top: 50%;
+          transform: translate(-50%, -50%);
+        }
+        .ipt-crosshair-vp::after {
+          width: 30px; height: 1px; left: 50%; top: 50%;
+          transform: translate(-50%, -50%);
+        }
+        .ipt-dot-vp {
+          position: absolute; width: 10px; height: 10px; border-radius: 50%;
+          background: rgba(59,130,246,0.9); pointer-events: none; z-index: 3;
+          transform: translate(-50%, -50%);
+        }
+        /* Resize-Anfasser (Ecken) */
+        .ipt-handle {
+          position: absolute; width: 18px; height: 18px;
+          background: rgba(255,255,255,0.9); border: 2px solid #555;
+          border-radius: 3px; z-index: 5;
+        }
+        .ipt-handle-tl { top: -9px; left: -9px; cursor: nw-resize; }
+        .ipt-handle-tr { top: -9px; right: -9px; cursor: ne-resize; }
+        .ipt-handle-bl { bottom: -9px; left: -9px; cursor: sw-resize; }
+        .ipt-handle-br { bottom: -9px; right: -9px; cursor: se-resize; }
+        /* Toolbar */
+        #ipt-toolbar {
+          display: flex; gap: 10px; margin-top: 16px; align-items: center;
+          flex-wrap: wrap; justify-content: center;
+        }
+        #ipt-toolbar button {
+          padding: 8px 18px; border: none; border-radius: 6px;
+          font-family: monospace; font-size: 14px; cursor: pointer;
+          transition: opacity 0.2s;
+        }
+        #ipt-toolbar button:hover { opacity: 0.85; }
+        #ipt-apply { background: #22c55e; color: #000; font-weight: bold; }
+        #ipt-copy { background: #3b82f6; color: #fff; }
+        #ipt-save { background: #f59e0b; color: #000; font-weight: bold; }
+        #ipt-cancel { background: #666; color: #fff; }
+        #ipt-reset { background: #ef4444; color: #fff; }
+        #ipt-info {
+          margin-top: 10px; font-size: 13px; color: #aaa;
+          text-align: center; line-height: 1.6;
+        }
+        #ipt-info code {
+          background: rgba(255,255,255,0.1); padding: 2px 6px;
+          border-radius: 3px; color: #fff;
+        }
+        #ipt-legend {
+          display: flex; gap: 20px; margin-top: 8px;
+          font-size: 12px; color: #999; justify-content: center;
+        }
+        .ipt-legend-dot {
+          display: inline-block; width: 10px; height: 10px;
+          border-radius: 50%; margin-right: 4px; vertical-align: middle;
+        }
+        #ipt-slide-info {
+          font-size: 12px; color: #aaa; margin-bottom: 8px;
+        }
+        #ipt-toast {
+          position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+          background: #22c55e; color: #000; padding: 10px 24px;
+          border-radius: 8px; font-family: monospace; font-size: 14px;
+          opacity: 0; transition: opacity 0.3s; pointer-events: none;
+          z-index: ${OVERLAY_Z + 1};
+        }
+        #ipt-toast.show { opacity: 1; }
+      </style>
+      <div id="ipt-slide-info"></div>
+      <div id="ipt-workspace">
+        <img id="ipt-img" />
+        <div id="ipt-viewport-frame"></div>
+        <div class="ipt-crosshair-img" id="ipt-ch-img"></div>
+        <div class="ipt-dot-img" id="ipt-dot-img"></div>
+        <div class="ipt-crosshair-vp" id="ipt-ch-vp"></div>
+        <div class="ipt-dot-vp" id="ipt-dot-vp"></div>
+        <div class="ipt-handle ipt-handle-tl" data-corner="tl"></div>
+        <div class="ipt-handle ipt-handle-tr" data-corner="tr"></div>
+        <div class="ipt-handle ipt-handle-bl" data-corner="bl"></div>
+        <div class="ipt-handle ipt-handle-br" data-corner="br"></div>
+      </div>
+      <div id="ipt-legend">
+        <span><span class="ipt-legend-dot" style="background:#ef4444"></span> Bild-Mitte</span>
+        <span><span class="ipt-legend-dot" style="background:#3b82f6"></span> Viewport-Mitte</span>
+      </div>
+      <div id="ipt-info"></div>
+      <div id="ipt-toolbar">
+        <button id="ipt-save" title="CSS direkt auf das Bild anwenden (Live-Preview)">Speichern</button>
+        <button id="ipt-copy" title="JSON in Zwischenablage kopieren">JSON kopieren</button>
+        <button id="ipt-reset" title="Zurück auf center center">Reset</button>
+        <button id="ipt-cancel">Abbrechen</button>
+      </div>
+      <div id="ipt-toast"></div>
+    `;
+    document.body.appendChild(overlayEl);
+
+    // Referenzen
+    const workspace = overlayEl.querySelector('#ipt-workspace');
+    const imgEl = overlayEl.querySelector('#ipt-img');
+
+    // Bild laden
+    imgEl.src = targetImg.src;
+
+    // Workspace-Größe = skalierter Viewport (passt in Overlay)
+    const maxW = window.innerWidth * 0.85;
+    const maxH = window.innerHeight * 0.65;
+    const displayScale = Math.min(maxW / vpW, maxH / vpH, 1);
+    const dispW = Math.round(vpW * displayScale);
+    const dispH = Math.round(vpH * displayScale);
+    workspace.style.width = dispW + 'px';
+    workspace.style.height = dispH + 'px';
+
+    // DisplayScale speichern für Maus→Bild-Koordinaten
+    overlayEl._displayScale = displayScale;
+
+    // Slide-Info
+    const slideInfo = overlayEl.querySelector('#ipt-slide-info');
+    const fileName = targetImg.src.split('/').pop();
+    const slideIdx = Array.from(document.querySelectorAll('.slide')).findIndex(
+      s => s.classList.contains('active')
+    );
+    slideInfo.textContent = `Slide ${slideIdx + 1}: ${fileName} (${naturalW}×${naturalH} → Viewport ${vpW}×${vpH})`;
+
+    // ── Drag: Bild verschieben ─────────────────────────────
+    workspace.addEventListener('mousedown', onDragStart);
+    workspace.addEventListener('mousemove', onDragMove);
+    workspace.addEventListener('mouseup', onDragEnd);
+    workspace.addEventListener('mouseleave', onDragEnd);
+
+    // Touch-Support
+    workspace.addEventListener('touchstart', onTouchDragStart, { passive: false });
+    workspace.addEventListener('touchmove', onTouchDragMove, { passive: false });
+    workspace.addEventListener('touchend', onDragEnd);
+
+    // ── Resize: Ecken-Anfasser ─────────────────────────────
+    overlayEl.querySelectorAll('.ipt-handle').forEach(handle => {
+      handle.addEventListener('mousedown', onResizeStart);
+      handle.addEventListener('touchstart', onTouchResizeStart, { passive: false });
+    });
+    document.addEventListener('mousemove', onResizeMove);
+    document.addEventListener('mouseup', onResizeEnd);
+    document.addEventListener('touchmove', onTouchResizeMove, { passive: false });
+    document.addEventListener('touchend', onResizeEnd);
+
+    // ── Scroll zum Zoomen ──────────────────────────────────
+    workspace.addEventListener('wheel', onWheel, { passive: false });
+
+    // ── Buttons ────────────────────────────────────────────
+    overlayEl.querySelector('#ipt-save').addEventListener('click', applyCss);
+    overlayEl.querySelector('#ipt-copy').addEventListener('click', copyJson);
+    overlayEl.querySelector('#ipt-reset').addEventListener('click', resetPosition);
+    overlayEl.querySelector('#ipt-cancel').addEventListener('click', closeOverlay);
+  }
+
+  // ── Preview aktualisieren ──────────────────────────────────
+  function updatePreview() {
+    if (!overlayEl) return;
+    const ds = overlayEl._displayScale;
+    const imgEl = overlayEl.querySelector('#ipt-img');
+    const vpFrame = overlayEl.querySelector('#ipt-viewport-frame');
+    const chImg = overlayEl.querySelector('#ipt-ch-img');
+    const dotImg = overlayEl.querySelector('#ipt-dot-img');
+    const chVp = overlayEl.querySelector('#ipt-ch-vp');
+    const dotVp = overlayEl.querySelector('#ipt-dot-vp');
+    const info = overlayEl.querySelector('#ipt-info');
+
+    // Bild positionieren
+    const scaledW = naturalW * imgScale;
+    const scaledH = naturalH * imgScale;
+    const dispImgW = scaledW * ds;
+    const dispImgH = scaledH * ds;
+    const dispX = imgX * ds;
+    const dispY = imgY * ds;
+
+    imgEl.style.width = dispImgW + 'px';
+    imgEl.style.height = dispImgH + 'px';
+    imgEl.style.left = dispX + 'px';
+    imgEl.style.top = dispY + 'px';
+
+    // Viewport-Rahmen
+    const dispVpW = vpW * ds;
+    const dispVpH = vpH * ds;
+    vpFrame.style.width = dispVpW + 'px';
+    vpFrame.style.height = dispVpH + 'px';
+
+    // Bild-Mittelpunkt (rot)
+    const imgCenterX = dispX + dispImgW / 2;
+    const imgCenterY = dispY + dispImgH / 2;
+    chImg.style.left = imgCenterX + 'px';
+    chImg.style.top = imgCenterY + 'px';
+    dotImg.style.left = imgCenterX + 'px';
+    dotImg.style.top = imgCenterY + 'px';
+
+    // Viewport-Mittelpunkt (blau)
+    const vpCenterX = dispVpW / 2;
+    const vpCenterY = dispVpH / 2;
+    chVp.style.left = vpCenterX + 'px';
+    chVp.style.top = vpCenterY + 'px';
+    dotVp.style.left = vpCenterX + 'px';
+    dotVp.style.top = vpCenterY + 'px';
+
+    // Ergebnis-Werte berechnen
+    const pos = calcObjectPosition();
+    const fileName = targetImg.src.split('/').pop();
+    info.innerHTML =
+      `<code>object-position: ${pos.x}% ${pos.y}%;</code> ` +
+      `&nbsp; Scale: ${(imgScale * 100).toFixed(0)}%` +
+      `<br><small>Scroll = Zoom, Drag = Verschieben, Ecken = Skalieren</small>`;
+  }
+
+  // ── Drag-Handlers ──────────────────────────────────────────
+  function onDragStart(e) {
+    if (e.target.classList.contains('ipt-handle')) return;
+    e.preventDefault();
+    dragging = true;
+    dragStartX = e.clientX;
+    dragStartY = e.clientY;
+    dragStartImgX = imgX;
+    dragStartImgY = imgY;
+    overlayEl.querySelector('#ipt-workspace').classList.add('dragging');
+  }
+
+  function onDragMove(e) {
+    if (!dragging) return;
+    e.preventDefault();
+    const ds = overlayEl._displayScale;
+    imgX = dragStartImgX + (e.clientX - dragStartX) / ds;
+    imgY = dragStartImgY + (e.clientY - dragStartY) / ds;
+    clampPosition();
+    updatePreview();
+  }
+
+  function onDragEnd() {
+    dragging = false;
+    resizing = false;
+    if (overlayEl) {
+      overlayEl.querySelector('#ipt-workspace').classList.remove('dragging');
+    }
+  }
+
+  // Touch-Drag
+  function onTouchDragStart(e) {
+    if (e.target.classList.contains('ipt-handle')) return;
+    if (e.touches.length !== 1) return;
+    e.preventDefault();
+    dragging = true;
+    dragStartX = e.touches[0].clientX;
+    dragStartY = e.touches[0].clientY;
+    dragStartImgX = imgX;
+    dragStartImgY = imgY;
+  }
+
+  function onTouchDragMove(e) {
+    if (!dragging || e.touches.length !== 1) return;
+    e.preventDefault();
+    const ds = overlayEl._displayScale;
+    imgX = dragStartImgX + (e.touches[0].clientX - dragStartX) / ds;
+    imgY = dragStartImgY + (e.touches[0].clientY - dragStartY) / ds;
+    clampPosition();
+    updatePreview();
+  }
+
+  // ── Resize-Handlers (Ecken-Anfasser) ───────────────────────
+  function onResizeStart(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    resizing = true;
+    resizeStartDist = e.clientY;
+    resizeStartScale = imgScale;
+  }
+
+  function onResizeMove(e) {
+    if (!resizing) return;
+    e.preventDefault();
+    const delta = resizeStartDist - e.clientY;
+    const factor = 1 + delta / 300;
+    setScale(resizeStartScale * factor);
+  }
+
+  function onResizeEnd() {
+    resizing = false;
+  }
+
+  // Touch-Resize
+  function onTouchResizeStart(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    resizing = true;
+    resizeStartDist = e.touches[0].clientY;
+    resizeStartScale = imgScale;
+  }
+
+  function onTouchResizeMove(e) {
+    if (!resizing) return;
+    e.preventDefault();
+    const delta = resizeStartDist - e.touches[0].clientY;
+    const factor = 1 + delta / 300;
+    setScale(resizeStartScale * factor);
+  }
+
+  // ── Scroll zum Zoomen ──────────────────────────────────────
+  function onWheel(e) {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.95 : 1.05;
+    setScale(imgScale * delta);
+  }
+
+  // ── Skalierung setzen (Mindest: cover) ─────────────────────
+  function setScale(newScale) {
+    const minScale = Math.max(vpW / naturalW, vpH / naturalH);
+    imgScale = Math.max(minScale, Math.min(newScale, minScale * 5));
+    clampPosition();
+    updatePreview();
+  }
+
+  // ── Position begrenzen (Bild immer >= Viewport) ────────────
+  function clampPosition() {
+    const scaledW = naturalW * imgScale;
+    const scaledH = naturalH * imgScale;
+    const minX = vpW - scaledW;
+    const minY = vpH - scaledH;
+    imgX = Math.min(0, Math.max(minX, imgX));
+    imgY = Math.min(0, Math.max(minY, imgY));
+  }
+
+  // ── CSS übernehmen (live auf das Slider-Bild) ──────────────
+  function applyCss() {
+    if (!targetImg) return;
+    const pos = calcObjectPosition();
+    targetImg.style.objectFit = 'cover';
+    targetImg.style.objectPosition = `${pos.x}% ${pos.y}%`;
+    showToast(`Gespeichert: object-position: ${pos.x}% ${pos.y}%`);
+  }
+
+  // ── JSON kopieren ──────────────────────────────────────────
+  function copyJson() {
+    const pos = calcObjectPosition();
+    const fileName = targetImg.src.split('/').pop();
+    const json = JSON.stringify({
+      image: fileName,
+      objectFit: 'cover',
+      objectPosition: `${pos.x}% ${pos.y}%`
+    }, null, 2);
+    navigator.clipboard.writeText(json).then(() => {
+      showToast('JSON in Zwischenablage kopiert!');
+    }).catch(() => {
+      // Fallback: Textfeld
+      prompt('JSON kopieren:', json);
+    });
+  }
+
+  // ── Reset auf center center ────────────────────────────────
+  function resetPosition() {
+    const scaleX = vpW / naturalW;
+    const scaleY = vpH / naturalH;
+    imgScale = Math.max(scaleX, scaleY);
+    const scaledW = naturalW * imgScale;
+    const scaledH = naturalH * imgScale;
+    imgX = -(scaledW - vpW) / 2;
+    imgY = -(scaledH - vpH) / 2;
+    updatePreview();
+  }
+
+  // ── Toast-Nachricht ────────────────────────────────────────
+  function showToast(msg) {
+    const toast = overlayEl.querySelector('#ipt-toast');
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+  }
+
+  // ── Overlay schließen ──────────────────────────────────────
+  function closeOverlay() {
+    if (!overlayEl) return;
+
+    // Event-Listener aufräumen
+    document.removeEventListener('mousemove', onResizeMove);
+    document.removeEventListener('mouseup', onResizeEnd);
+    document.removeEventListener('touchmove', onTouchResizeMove);
+    document.removeEventListener('touchend', onResizeEnd);
+
+    overlayEl.remove();
+    overlayEl = null;
+    isOpen = false;
+    targetImg = null;
+    dragging = false;
+    resizing = false;
+
+    // Slider-Autoplay neu starten
+    if (typeof startSlider === 'function') {
+      startSlider();
+    }
+  }
+
+})();
+</script>
+
 </body>
 </html>
