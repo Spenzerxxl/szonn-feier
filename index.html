@@ -1271,15 +1271,19 @@
         nimmt_teil: false,
       };
 
+      let declineEditToken;
+
       if (editMode && existingAnmeldungId) {
         data.updated_at = new Date().toISOString();
         await supabaseRequest('PATCH', `/rest/v1/ck_anmeldungen?id=eq.${existingAnmeldungId}`, data, editToken);
+        declineEditToken = editToken;
       } else {
-        await supabaseRequest('POST', '/rest/v1/ck_anmeldungen', data);
+        const result = await supabaseRequest('POST', '/rest/v1/ck_anmeldungen', data, null, true);
+        declineEditToken = result[0].edit_token;
       }
 
       // Trigger n8n webhook
-      triggerWebhook({ ...data, edit_token: editToken });
+      triggerWebhook({ ...data, edit_token: declineEditToken });
 
       document.querySelectorAll('.form-step').forEach(s => s.classList.remove('active'));
       document.getElementById('stepDecline').classList.add('active');
