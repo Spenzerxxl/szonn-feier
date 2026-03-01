@@ -805,12 +805,20 @@
     if (type === 'teilnehmer') {
       rows = [
         ['Name', 'E-Mail', 'Telefon', 'Typ', 'Vegan', 'Glutenfrei', 'Stadtführung', 'Logenhausführung', 'Bemerkungen', 'Anmeldedatum'],
-        ...allTeilnehmer.map(t => [
-          t.name, t.email, t.telefon || '', t.typ,
+        ...allTeilnehmer.map(t => {
+          let typ = t.typ;
+          const prefix = 'Begleitung von ';
+          if (typ && typ.startsWith(prefix)) {
+            const vorname = typ.substring(prefix.length);
+            const hauptgast = allAnmeldungen.find(a => a.vorname === vorname);
+            if (hauptgast) typ = prefix + hauptgast.vorname + ' ' + hauptgast.nachname;
+          }
+          return [
+          t.name, t.email, t.telefon || '', typ,
           t.vegan ? 'Ja' : 'Nein', t.glutenfrei ? 'Ja' : 'Nein',
           t.stadtfuehrung ? 'Ja' : 'Nein', t.logenhaus_tour ? 'Ja' : 'Nein',
           t.bemerkungen || '', new Date(t.created_at).toLocaleDateString('de-DE')
-        ])
+        ]})
       ];
       filename = 'ck-feier-teilnehmer.csv';
     } else {
