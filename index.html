@@ -197,6 +197,29 @@
     .welcome-text p { margin-bottom: 1rem; }
 
     /* Program */
+    .venue-info {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      background: #f8f4ec;
+      border: 1px solid #e8d8b0;
+      border-left: 4px solid #c9a84c;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin-bottom: 28px;
+      color: #333;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+    .venue-icon {
+      font-size: 20px;
+      margin-top: 2px;
+      flex-shrink: 0;
+    }
+    .venue-details strong {
+      color: #2c3e50;
+      font-size: 16px;
+    }
     .program-timeline {
       position: relative;
       padding-left: 2rem;
@@ -777,6 +800,14 @@
 <section class="section" id="programm">
   <h2 class="section-title">Unser Programm</h2>
   <div class="section-line"></div>
+  <div class="venue-info">
+    <span class="venue-icon">📍</span>
+    <div class="venue-details">
+      <strong>Logenhaus Lübeck</strong><br>
+      Ecke St. Annen-Str. 2 / Schildstraße 22–30<br>
+      23552 Lübeck
+    </div>
+  </div>
   <div class="program-timeline">
     <div class="program-item">
       <div class="program-time">15:30 Uhr</div>
